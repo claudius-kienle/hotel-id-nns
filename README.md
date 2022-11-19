@@ -1,14 +1,13 @@
 # setup dataset
 1. Goto [kaggle](https://www.kaggle.com/competitions/hotel-id-2021-fgvc8/data) and download the dataset zip
-1. Extract it to hotel-id-nns/dataset/hotel-id-2021-fgvc8. The directory structure should look like this:
+1. Extract it to dataset/hotel-id-2021-fgvc8. The directory structure should look like this:
     ```
-    hotel-id-nns/
-    └──dataset/
-       └──hotel-id-2021-fgvc8/
-          └──test_images/
-          └──train_images/
-          └──sample_submission.csv
-          └──train.csv
+    dataset/
+    └──hotel-id-2021-fgvc8/
+       └──test_images/
+       └──train_images/
+       └──sample_submission.csv
+       └──train.csv
     ```
 1. Convert the dataset into a usable format using the python script tools/hotel_dataset_converter.py
     ```bash
