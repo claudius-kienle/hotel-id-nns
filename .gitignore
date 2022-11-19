@@ -1,6 +1,10 @@
 .pybuilder/
 target/
 
+# dataset
+hotel-id-2021-fgvc8/
+dataset/hotel_*
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
