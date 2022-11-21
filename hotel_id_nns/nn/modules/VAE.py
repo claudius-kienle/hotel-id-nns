@@ -8,7 +8,6 @@ from hotel_id_nns.nn.modules.Encoder import Encoder
 
 
 class VAE(nn.Module):
-
     def __init__(
         self,
         in_size: int,
@@ -17,21 +16,23 @@ class VAE(nn.Module):
         latent_dim: int,
     ) -> None:
         super().__init__()
+        self.encoder = Encoder(in_size=in_size, in_channels=in_out_channels, hidden_channels=hidden_channels)
+        self.__hidden_channels = hidden_channels
 
-        self.encoder = Encoder(in_size=in_size,in_channels=in_out_channels, hidden_channels=hidden_channels)
+        encoder_out_features = self.encoder.out_size ** 2 * hidden_channels[-1]
 
         self.fc_mu = nn.Linear(
-            in_features=hidden_channels[-1],
+            in_features=encoder_out_features,
             out_features=latent_dim,
         )
         self.fc_logvar = nn.Linear(
-            in_features=hidden_channels[-1],
+            in_features=encoder_out_features,
             out_features=latent_dim,
         )
 
         self.decoder_input = nn.Linear(
             in_features=latent_dim,
-            out_features=hidden_channels[-1],
+            out_features=encoder_out_features,
         )
 
         rev_hidden_channels = copy.deepcopy(hidden_channels)
@@ -58,9 +59,9 @@ class VAE(nn.Module):
 
     def _decode(self, input: torch.Tensor) -> torch.Tensor:
         output = self.decoder_input(input)
+        output = output.view(input.shape[0], self.__hidden_channels[-1], self.encoder.out_size, self.encoder.out_size)
         output = self.decoder(output)
         return output
-
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         mu, logvar = self._encode(input)

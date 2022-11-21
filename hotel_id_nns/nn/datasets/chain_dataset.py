@@ -5,6 +5,8 @@ import torchvision.transforms as T
 from PIL import Image
 from torch.utils.data import Dataset
 
+from hotel_id_nns.nn.processing.NormalizeTo import NormalizeTo
+
 class ChainDataset(Dataset):
 
     def __init__(self, annotations_file_path: Path, size: int) -> None:
@@ -17,6 +19,8 @@ class ChainDataset(Dataset):
         self.preprocess = T.Compose([
             T.RandomCrop(size=size),
             T.PILToTensor(),
+            T.ConvertImageDtype(dtype=torch.float32),
+            NormalizeTo(),
         ])
 
 

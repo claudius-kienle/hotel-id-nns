@@ -2,6 +2,7 @@
 target/
 
 data
+**/__pycache__
 
 # dataset
 hotel-id-2021-fgvc8/

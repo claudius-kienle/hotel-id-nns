@@ -3,6 +3,7 @@ import time
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.modules.VAE import VAE
 from hotel_id_nns.nn.trainers.trainer import Trainer
+from hotel_id_nns.nn.trainers.vae_trainer import VAETrainer
 
 def main():
     input_size = 512
@@ -12,24 +13,24 @@ def main():
     val_annotations = Path("/home/claudiusk/Documents/studium/sem-3/hotel-id-nns/data/raw/hotel_val_chain.csv")
     val_ds = ChainDataset(annotations_file_path=val_annotations, size=input_size)
 
-    trainer_config = Trainer.Config(
+    trainer_config = VAETrainer.Config(
         epochs=1,
         activate_wandb=False,
         amp=False,
         batch_size=1,
         learning_rate=1e-2,
         load_from_model=None,
-        loss_type='VAELoss',
+        kld_loss_weight=0.2,
         lr_patience=100,
         optimizer_name='adam',
         save_checkpoint=False,
         val_interval=1000,
     )
 
-    trainer = Trainer()
+    trainer = VAETrainer()
 
     vae = VAE(
-        input_size=input_size,
+        in_size=input_size,
         in_out_channels=3,
         hidden_channels=[32, 64, 128, 256],
         latent_dim=512,

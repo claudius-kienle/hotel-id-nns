@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-class ConvLayer(nn):
+class ConvTransposeLayer(nn.Module):
 
     def __init__(
         self,

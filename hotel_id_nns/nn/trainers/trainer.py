@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import logging
 from pathlib import Path
 import random
@@ -48,7 +49,6 @@ class Trainer:
                 batch_size: int,
                 learning_rate: float,
                 lr_patience: int,
-                loss_type: str,
                 val_interval: int,
                 save_checkpoint: bool,
                 amp: bool,
@@ -60,7 +60,6 @@ class Trainer:
             self.batch_size = batch_size
             self.learning_rate = learning_rate
             self.lr_patience = lr_patience
-            self.loss_type = loss_type
             self.val_size = val_interval
             self.save_checkpoint = save_checkpoint
             self.amp = amp
@@ -78,7 +77,6 @@ class Trainer:
                 save_checkpoint=config['save'],
                 amp=config['amp'],
                 activate_wandb=config['wandb'],
-                loss_type=config['loss_type'],
                 val_interval=config['validation_interval'],
                 optimizer_name=config['optimizer_name'],
                 load_from_model=Path(config['load_from_model']) if config['load_from_model'] != "None" else None
@@ -87,9 +85,6 @@ class Trainer:
         def __iter__(self):
             for attr, value in self.__dict__.items():
                 yield attr, value
-
-        def num_in_channels(self):
-            return 4 + self.add_region_mask_to_input + self.add_nan_mask_to_input
 
         def __repr__(self):
             return f"""
@@ -100,7 +95,6 @@ class Trainer:
                 Save Checkpoints:    {self.save_checkpoint}
                 AMP:                 {self.amp}
                 WandB:               {self.activate_wandb}
-                Loss Type:           {self.loss_type}
                 Validation Interval  {self.val_size}
                 Optimizer Name:      {self.optimizer_name}
                 Load From Model:      {self.load_from_model}
@@ -120,21 +114,9 @@ class Trainer:
         self.device = device if device is not None else torch.device("cpu")
         # self.dataset_config = dataset_config
 
-    def infer(
-        self,
-        net,
-        batch,
-        loss_criterion
-    ):
-        input_img, chain_id = batch 
-
-        input_img= input_img.to(device=self.device)
-
-        output_img = net(input_img)
-
-        loss = loss_criterion(output_img, input_img)
-
-        return output_img, loss
+    @abstractmethod
+    def infer( self, net, batch, loss_criterion):
+        raise NotImplementedError()
 
     def evaluate(
         self,
@@ -207,6 +189,7 @@ class Trainer:
             **histograms
         }
 
+    @abstractmethod
     def train(
         self,
         net: torch.nn.Module,
@@ -214,6 +197,18 @@ class Trainer:
         # evaluation_dir: Path,
         train_ds: Dataset,
         val_ds: Dataset,
+    ):
+        raise NotImplementedError()
+
+
+    def _train(
+        self,
+        net: torch.nn.Module,
+        config: Config,
+        # evaluation_dir: Path,
+        train_ds: Dataset,
+        val_ds: Dataset,
+        loss_criterion,
     ):
         if config.save_checkpoint:
             dir_checkpoint = evaluation_dir / f"{net.name}"
@@ -272,11 +267,6 @@ class Trainer:
             **loader_args
         )
 
-        ##############
-        #### LOSS ####
-        ##############
-        loss_criterion = get_loss_criterion(config.loss_type)  # nn.L1Loss(reduction='sum')
-
         # Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
         if config.optimizer_name == 'rmsprop':
             optimizer = optim.RMSprop(
@@ -317,6 +307,8 @@ class Trainer:
                 for batch in train_loader:
                     with torch.cuda.amp.autocast(enabled=config.amp):
                         _, loss = self.infer(net, batch, loss_criterion)
+
+                    assert not torch.isnan(loss)
 
                     optimizer.zero_grad(set_to_none=True)
                     grad_scaler.scale(loss).backward()
