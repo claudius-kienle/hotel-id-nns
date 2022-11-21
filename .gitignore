@@ -1,6 +1,8 @@
 .pybuilder/
 target/
 
+data
+
 # dataset
 hotel-id-2021-fgvc8/
 dataset/hotel_*

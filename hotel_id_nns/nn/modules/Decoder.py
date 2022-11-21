@@ -16,7 +16,7 @@ class Decoder(nn.Module):
 
         modules = [
             ConvLayer(in_channels=channels[i], out_channels=channels[i + 1])
-            for i in range(len(channels))
+            for i in range(len(channels) - 1)
         ]
 
         self.decoder = nn.Sequential(*modules)

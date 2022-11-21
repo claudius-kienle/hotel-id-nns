@@ -1,3 +1,4 @@
+import copy
 from typing import List, Tuple
 import torch
 from torch import nn
@@ -10,13 +11,14 @@ class VAE(nn.Module):
 
     def __init__(
         self,
+        in_size: int,
         in_out_channels: int,
         hidden_channels: List[int],
         latent_dim: int,
     ) -> None:
         super().__init__()
 
-        self.encoder = Encoder(in_channels=in_out_channels, hidden_channels=hidden_channels)
+        self.encoder = Encoder(in_size=in_size,in_channels=in_out_channels, hidden_channels=hidden_channels)
 
         self.fc_mu = nn.Linear(
             in_features=hidden_channels[-1],
@@ -32,9 +34,12 @@ class VAE(nn.Module):
             out_features=hidden_channels[-1],
         )
 
+        rev_hidden_channels = copy.deepcopy(hidden_channels)
+        rev_hidden_channels.reverse()
+
         self.decoder = Decoder(
             out_channels=in_out_channels,
-            hidden_channels=hidden_channels.reverse(),
+            hidden_channels=rev_hidden_channels,
         )
 
     def _encode(self, input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
