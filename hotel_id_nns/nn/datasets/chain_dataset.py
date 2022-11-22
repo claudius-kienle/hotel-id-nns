@@ -10,6 +10,7 @@ from hotel_id_nns.nn.processing.NormalizeTo import NormalizeTo
 class ChainDataset(Dataset):
 
     def __init__(self, annotations_file_path: Path, size: int) -> None:
+        # TODO: adapt size to tuple (w,h)
         super().__init__()
         assert annotations_file_path.exists()
 
@@ -17,7 +18,7 @@ class ChainDataset(Dataset):
         self.chain_annotations = pd.read_csv(annotations_file_path, names=['path', 'chain_id'], sep=' ')
 
         self.preprocess = T.Compose([
-            T.RandomCrop(size=size),
+            T.Resize(size=(size, size)),
             T.PILToTensor(),
             T.ConvertImageDtype(dtype=torch.float32),
             NormalizeTo(),

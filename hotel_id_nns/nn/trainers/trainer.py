@@ -60,7 +60,7 @@ class Trainer:
             self.batch_size = batch_size
             self.learning_rate = learning_rate
             self.lr_patience = lr_patience
-            self.val_size = val_interval
+            self.val_interval = val_interval
             self.save_checkpoint = save_checkpoint
             self.amp = amp
             self.activate_wandb = activate_wandb
@@ -74,10 +74,10 @@ class Trainer:
                 batch_size=config['batch_size'],
                 learning_rate=config['learning_rate'],
                 lr_patience=config['lr_patience'],
-                save_checkpoint=config['save'],
+                save_checkpoint=config['save_checkpoint'],
                 amp=config['amp'],
-                activate_wandb=config['wandb'],
-                val_interval=config['validation_interval'],
+                activate_wandb=config['activate_wandb'],
+                val_interval=config['val_interval'],
                 optimizer_name=config['optimizer_name'],
                 load_from_model=Path(config['load_from_model']) if config['load_from_model'] != "None" else None
             )
@@ -95,7 +95,7 @@ class Trainer:
                 Save Checkpoints:    {self.save_checkpoint}
                 AMP:                 {self.amp}
                 WandB:               {self.activate_wandb}
-                Validation Interval  {self.val_size}
+                Validation Interval  {self.val_interval}
                 Optimizer Name:      {self.optimizer_name}
                 Load From Model:      {self.load_from_model}
             """
@@ -111,7 +111,7 @@ class Trainer:
         else:
             self.trainer_id = trainer_id
 
-        self.device = device if device is not None else torch.device("cpu")
+        self.device = device if device is not None else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
         # self.dataset_config = dataset_config
 
     @abstractmethod
@@ -205,33 +205,42 @@ class Trainer:
         self,
         net: torch.nn.Module,
         config: Config,
-        # evaluation_dir: Path,
+        checkpoint_dir: Path,
         train_ds: Dataset,
         val_ds: Dataset,
         loss_criterion,
     ):
         if config.save_checkpoint:
-            dir_checkpoint = evaluation_dir / f"{net.name}"
+            dir_checkpoint = checkpoint_dir / f"{net.name}"
 
-        division_step = (config.val_size // config.batch_size)
+        division_step = (config.val_interval // config.batch_size)
         n_train = len(train_ds)
         n_val = len(val_ds)
 
         # (Initialize logging)
         if config.activate_wandb:
             experiment = wandb.init(project=net.name, resume='allow',
-                                    entity="depth-denoising", reinit=True)
+                                    entity="hotel-id-nns", reinit=True)
             experiment.config.update(
                 dict(
-                    **dict(self.dataset_config),
-                    **dict(config),
-                    **dict(net.config),
+                 # TODO:
+                    # **dict(self.dataset_config),
+                    # **dict(config),
+                    # **dict(net.config),
                     trainer_id=self.trainer_id,
                     training_size=n_train,
                     validation_size=n_val,
                     evaluation_interval=division_step
                 )
             )
+
+        logging.info(f'''Starting training:
+            Training size:       {n_train}
+            Validation size:     {n_val}
+            Device:              {self.device.type}
+            Trainer Config:
+                {config}'''
+        )
 
         """logging.info(f'''Starting training:
             Training size:       {n_train}
@@ -249,7 +258,7 @@ class Trainer:
             net.load_state_dict(torch.load(ROOT_DIR / config.load_from_model, map_location='cpu'))
 
         # net = nn.DataParallel(net)
-        # net.to(self.device)
+        net.to(self.device)
 
         loader_args = dict(
             batch_size=config.batch_size,
@@ -336,12 +345,12 @@ class Trainer:
                     pbar.set_postfix(**{'loss (batch)': loss.item()})
 
                     # Visualization round
-                    if global_step % division_step == 0 and config.activate_wandb:
-                        logging.debug("visualization round")
-                        experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
-                        experiment_log['step'] = global_step * config.batch_size,
-                        experiment_log['epoch'] = epoch
-                        experiment.log(experiment_log)
+                    # if global_step % division_step == 0 and config.activate_wandb:
+                    #     logging.debug("visualization round")
+                    #     experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
+                    #     experiment_log['step'] = global_step * config.batch_size,
+                    #     experiment_log['epoch'] = epoch
+                    #     experiment.log(experiment_log)
 
                     if global_step % (n_train // (config.batch_size * lr_updates_per_epoch)) == 0:
                         logging.debug("evaluation round")

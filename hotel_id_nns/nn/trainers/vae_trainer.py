@@ -9,7 +9,9 @@ from hotel_id_nns.nn.trainers.trainer import Trainer
 
 
 class VAETrainer(Trainer):
+
     class Config(Trainer.Config):
+
         def __init__(
             self,
             epochs: int,
@@ -38,6 +40,15 @@ class VAETrainer(Trainer):
             )
             self.kld_loss_weight = kld_loss_weight
 
+        @staticmethod
+        def from_config(config: dict):
+            parent_conf = Trainer.Config.from_config(config)
+            return VAETrainer.Config(
+                **dict(parent_conf),
+                kld_loss_weight=config['kld_loss_weight']
+            )
+        
+
     def __init__(
         self,
         trainer_id: Optional[str] = None,
@@ -61,7 +72,15 @@ class VAETrainer(Trainer):
         net: torch.nn.Module,
         config: Config,
         train_ds: Dataset,
+        checkpoint_dir: Path,
         val_ds: Dataset,
     ):
         loss_criterion = VAELoss(kld_weight=config.kld_loss_weight)
-        return super()._train(net, config, train_ds, val_ds, loss_criterion=loss_criterion)
+        return super()._train(
+            net=net,
+            config=config,
+            train_ds=train_ds,
+            val_ds=val_ds,
+            checkpoint_dir=checkpoint_dir,
+            loss_criterion=loss_criterion,
+        )
