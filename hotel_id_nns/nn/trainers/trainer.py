@@ -284,6 +284,11 @@ class Trainer:
                 weight_decay=0,
                 amsgrad=False
             )
+        elif config.optimizer_name == 'sgd':
+            optimizer = optim.SGD(
+                net.parameters(),
+                lr=config.learning_rate,
+            )
         else:
             RuntimeError(f"invalid optimizer name given {config.optimizer_name}")
 
@@ -304,13 +309,14 @@ class Trainer:
             net.train()
             epoch_loss = 0
             with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{config.epochs}', unit='img') as pbar:
-                for batch in train_loader:
+               for batch in train_loader:
+                    optimizer.zero_grad(set_to_none=True)
+
                     with torch.cuda.amp.autocast(enabled=config.amp):
                         _, loss = self.infer(net, batch, loss_criterion)
 
                     assert not torch.isnan(loss)
 
-                    optimizer.zero_grad(set_to_none=True)
                     grad_scaler.scale(loss).backward()
                     grad_scaler.step(optimizer)
                     grad_scaler.update()

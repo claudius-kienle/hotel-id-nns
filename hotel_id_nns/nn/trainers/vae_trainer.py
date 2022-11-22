@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 import torch
 from torch.utils.data import Dataset
 from hotel_id_nns.nn.losses.VAELoss import VAELoss
+from hotel_id_nns.nn.modules.VAE import VAE
 from hotel_id_nns.nn.trainers.trainer import Trainer
 
 
@@ -44,7 +45,7 @@ class VAETrainer(Trainer):
     ):
         super().__init__(trainer_id, device)
 
-    def infer(self, net, batch, loss_criterion: VAELoss) -> Tuple[torch.Tensor, torch.Tensor]:
+    def infer(self, net: VAE, batch, loss_criterion: VAELoss) -> Tuple[torch.Tensor, torch.Tensor]:
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)

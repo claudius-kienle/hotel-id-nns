@@ -25,7 +25,7 @@ class NormalizeTo(torch.nn.Module):
         super().__init__()
 
         self.mean = mean if mean is not None else torch.zeros(1)
-        self.std = std if std is not None else torch.zeros(1)
+        self.std = std if std is not None else torch.ones(1)
         self.inplace = inplace
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -39,7 +39,8 @@ class NormalizeTo(torch.nn.Module):
         dims = tuple(range(1,len(tensor)))
         mean = tensor.mean(dims)
         std = tensor.std(dims)
-        return F.normalize(tensor, mean, std, self.inplace) * self.std + self.mean
+        out = F.normalize(tensor, mean, std, self.inplace) * self.std + self.mean
+        return out
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)

@@ -18,11 +18,11 @@ def main():
         activate_wandb=False,
         amp=False,
         batch_size=1,
-        learning_rate=1e-2,
+        learning_rate=1e-4,
         load_from_model=None,
         kld_loss_weight=0.2,
         lr_patience=100,
-        optimizer_name='adam',
+        optimizer_name='sgd',
         save_checkpoint=False,
         val_interval=1000,
     )
