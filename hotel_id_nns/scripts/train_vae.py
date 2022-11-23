@@ -45,7 +45,7 @@ def train_vae(args):
 def main():
     logging.basicConfig(level=logging.INFO, force=True)
     parser = ArgumentParser()
-    parser.add_argument('config-path', type=Path, default='data/config/train_vae.json')
+    parser.add_argument('config_path', type=Path, default='data/config/train_vae.json')
 
     train_vae(parser.parse_args())
 

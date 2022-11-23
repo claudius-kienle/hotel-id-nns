@@ -143,7 +143,9 @@ class Trainer:
 
     def __evaluate_for_visualization(self, dataloader: DataLoader, net, loss_criterion):
         idx = random.randint(0, len(dataloader) - 1)
-        batch = list(iter(dataloader))[idx]
+        in_img, label = dataloader.dataset[idx]
+        in_img = in_img[None] # add batch dim
+        batch = (in_img, [label])
 
         prediction, _ = self.infer(net, batch, loss_criterion)
 
@@ -154,8 +156,8 @@ class Trainer:
             histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
         # visualizate images
-        in_img = batch[0].numpy().transpose((1, 2, 0))
-        pred_img = prediction.detach().numpy().transpose((1, 2, 0))
+        in_img = batch[0].squeeze().numpy().transpose((1, 2, 0))
+        pred_img = prediction.detach().squeeze().numpy().transpose((1, 2, 0))
 
         return {
             'input': {
