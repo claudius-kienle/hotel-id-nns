@@ -172,7 +172,8 @@ if __name__ == "__main__":
     dataset = HotelDataset.from_annotation_file(args.annotation_file)
 
 
-    train, set2 = dataset.split_images_by_ratio(0.7, class_name, seed=seed)
+    # TODO: parameterize
+    train, set2 = dataset.split_images_by_ratio(0.9, class_name, seed=seed)
     val, test = set2.split_images_by_ratio(2/3, class_name, seed=seed)
 
     train.shuffle_rows(seed)

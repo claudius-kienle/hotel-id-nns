@@ -371,7 +371,7 @@ class Trainer:
 
             if config.save_checkpoint:
                 dir_checkpoint.mkdir(parents=True, exist_ok=True)
-                torch.save(net.module.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
+                torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
                 logging.info(f'Checkpoint {epoch + 1} saved!')
 
         if config.activate_wandb:

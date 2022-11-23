@@ -95,3 +95,7 @@ cython_debug/
 #.idea/
 
 .vscode
+
+*.egg-info
+build
+*.out

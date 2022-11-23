@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=privat@claudiuskienle.de
-#SBATCH --partition=dev_gpu_4,gpu_4,gpu_8
+#SBATCH --partition=gpu_4,gpu_8
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
-#SBATCH --time=0:30:00
+#SBATCH --time=6:00:00
 #SBATCH --gres=gpu:4
-#SBATCH --export=ALL,EXECUTABLE="python hotel_id_nns/scripts/train_vae.py configs/config_bl_nocrop_noscale.yml"
+#SBATCH --export=ALL,EXECUTABLE="python hotel_id_nns/scripts/train_vae.py"
 #SBATCH --output="train_models.out"
-#SBATCH -J TrainUNet
+#SBATCH -J TrainVAE
 
 #Usually you should set
 export KMP_AFFINITY=compact,1,0
