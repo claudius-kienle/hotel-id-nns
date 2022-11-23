@@ -63,6 +63,12 @@ class VAETrainer(Trainer):
 
         output_img, mu, logvar = net(input_img)
 
+        # from matplotlib import pyplot as plt
+        # _, ax = plt.subplots(2,1)
+        # ax[0].imshow(input_img[0].transpose(0, 2))
+        # ax[1].imshow(output_img[0].transpose(0, 2).detach())
+        # plt.show()
+
         loss = loss_criterion(prediction=output_img, input=input_img, mu=mu, logvar=logvar)
 
         return output_img, loss

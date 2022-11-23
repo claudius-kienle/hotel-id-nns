@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
+from torch.utils.data import RandomSampler
 from torch.utils.data import DataLoader, Dataset
 from hotel_id_nns.nn.losses.VAELoss import VAELoss
 import wandb
@@ -144,7 +145,7 @@ class Trainer:
         idx = random.randint(0, len(dataloader) - 1)
         batch = list(iter(dataloader))[idx]
 
-        predictions, _ = self.infer(net, batch, loss_criterion)
+        prediction, _ = self.infer(net, batch, loss_criterion)
 
         histograms = {}
         for tag, value in net.named_parameters():
@@ -153,38 +154,15 @@ class Trainer:
             histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
         # visualizate images
-        vis_image = batch['image'][0].numpy().transpose((1, 2, 0))
-        nan_mask = batch['nan-mask'][0].numpy().squeeze()
-        region_mask = batch['region-mask'][0].numpy().squeeze()
-        vis_depth_input = vis_image[..., 3].squeeze()
-        vis_depth_label = batch['label'][0].numpy().squeeze()
-        depth_prediction = predictions[0].float().cpu().detach().numpy().squeeze()
-
-        # apply masks
-        mask = np.logical_and(nan_mask, region_mask)
-        vis_depth_prediction = np.where(mask, depth_prediction, np.nan)
-        vis_depth_input = np.where(mask, vis_depth_input, np.nan)
-        vis_depth_label = np.where(mask, vis_depth_label, np.nan)
-
-        # undo normalization
-        if self.dataset_config.normalize_depths:
-            params = dict(min=self.dataset_config.normalize_depths_min, max=self.dataset_config.normalize_depths_max)
-            vis_depth_input = unnormalize_depth(vis_depth_input, **params)
-            vis_depth_label = unnormalize_depth(vis_depth_label, **params)
-            vis_depth_prediction = unnormalize_depth(vis_depth_prediction, **params)
+        in_img = batch[0].numpy().transpose((1, 2, 0))
+        pred_img = prediction.detach().numpy().transpose((1, 2, 0))
 
         return {
             'input': {
-                'rgb': wandb.Image(to_rgb(vis_image[..., :3])),
-                'depth': wandb.Image(visualize_depth(vis_depth_input)),
+                'rgb': wandb.Image(in_img),
             },
             'output': {
-                'label': wandb.Image(visualize_depth(vis_depth_label)),
-                'pred': wandb.Image(visualize_depth(vis_depth_prediction)),
-            },
-            'masks': {
-                'nan-mask': wandb.Image(visualize_mask(nan_mask)),
-                'region-mask': wandb.Image(visualize_mask(region_mask)),
+                'pred': wandb.Image(pred_img),
             },
             **histograms
         }
@@ -293,6 +271,15 @@ class Trainer:
                 weight_decay=0,
                 amsgrad=False
             )
+        elif config.optimizer_name == 'amsgrad':
+            optimizer = optim.Adam(
+                net.parameters(),
+                lr=config.learning_rate,
+                betas=(0.9, 0.999),
+                eps=1e-08,
+                weight_decay=0,
+                amsgrad=False
+            )
         elif config.optimizer_name == 'sgd':
             optimizer = optim.SGD(
                 net.parameters(),
@@ -329,6 +316,8 @@ class Trainer:
                     grad_scaler.scale(loss).backward()
                     grad_scaler.step(optimizer)
                     grad_scaler.update()
+                    # loss.backward()
+                    # optimizer.step()
 
                     pbar.update(config.batch_size)
                     global_step += 1
@@ -345,12 +334,12 @@ class Trainer:
                     pbar.set_postfix(**{'loss (batch)': loss.item()})
 
                     # Visualization round
-                    # if global_step % division_step == 0 and config.activate_wandb:
-                    #     logging.debug("visualization round")
-                    #     experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
-                    #     experiment_log['step'] = global_step * config.batch_size,
-                    #     experiment_log['epoch'] = epoch
-                    #     experiment.log(experiment_log)
+                    if global_step % division_step == 0 and config.activate_wandb:
+                        logging.debug("visualization round")
+                        experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
+                        experiment_log['step'] = global_step * config.batch_size,
+                        experiment_log['epoch'] = epoch
+                        experiment.log(experiment_log)
 
                     if global_step % (n_train // (config.batch_size * lr_updates_per_epoch)) == 0:
                         logging.debug("evaluation round")

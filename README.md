@@ -14,3 +14,19 @@
     python tools/hotel_dataset_converter.py dataset/hotel-id-2021-fgvc8/train.csv dataset/ --seed 0
     ```
 1. The generated train, val and test files contain rows in the format `image-path class-idx` where class-idx is the index of the class-label which are listed in `hotel_classes_` file.
+
+# Development
+
+First setup the virtual conda environmnent with
+
+```bash
+conda env create -f environment.yaml
+conda activate hotel-id-nns
+```
+
+Install the `hotel-id-nns` as editable install with pip to start development without any setup. This requires pip version 22.*
+
+```bash
+pip install -e . --config-settings editable_mode=strict
+
+```

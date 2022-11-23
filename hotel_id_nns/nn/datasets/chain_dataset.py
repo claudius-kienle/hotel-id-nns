@@ -9,10 +9,12 @@ from hotel_id_nns.nn.processing.NormalizeTo import NormalizeTo
 
 class ChainDataset(Dataset):
 
-    def __init__(self, annotations_file_path: Path, size: int) -> None:
+    def __init__(self, annotations_file_path: Path, config: dict) -> None:
         # TODO: adapt size to tuple (w,h)
         super().__init__()
         assert annotations_file_path.exists()
+
+        size = config['input_size']
 
         self.ds_path = annotations_file_path.parent / "train_images"
         self.chain_annotations = pd.read_csv(annotations_file_path, names=['path', 'chain_id'], sep=' ')

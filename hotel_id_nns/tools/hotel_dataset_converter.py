@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
 
     # TODO: parameterize
-    train, set2 = dataset.split_images_by_ratio(0.9, class_name, seed=seed)
+    train, set2 = dataset.split_images_by_ratio(0.95, class_name, seed=seed)
     val, test = set2.split_images_by_ratio(2/3, class_name, seed=seed)
 
     train.shuffle_rows(seed)
