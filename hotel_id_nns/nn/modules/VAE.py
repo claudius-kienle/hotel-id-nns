@@ -47,6 +47,8 @@ class VAE(nn.Module):
             hidden_channels=rev_hidden_channels,
         )
 
+        self.output_fn = nn.Sigmoid()
+
     def _encode(self, input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         ls = self.encoder.forward(input)
         ls_flattened = ls.flatten(start_dim=1)
@@ -71,4 +73,5 @@ class VAE(nn.Module):
         mu, logvar = self._encode(input)
         z = self.reparameterize(mu=mu, logvar=logvar)
         output = self._decode(z)
+        output = self.output_fn(output)
         return [output, mu, logvar]

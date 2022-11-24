@@ -19,14 +19,16 @@ class VAELoss2(object):
         logvar: torch.Tensor,
         prediction: torch.Tensor,
     ):
-        recon = torch.nn.functional.binary_cross_entropy(input=prediction, target=input) * input.shape[:2]
+        _, _, w, h = input.shape
+        pixels = w * h
+        recon = torch.nn.functional.binary_cross_entropy(input=prediction, target=input) * pixels
 
         std = torch.exp(0.5 * logvar)
         kl = 1 + std - mu ** 2 - torch.exp(std)
         kl = torch.sum(kl, dim=-1)
         kl = kl * -.05
 
-        loss = torch.mean(recon + kl)
+        loss = (1 - self.kld_weight) * recon + self.kld_weight * kl
 
         info = {
             'kld_loss': kl,
