@@ -26,7 +26,7 @@ class VAELoss2(object):
         std = torch.exp(0.5 * logvar)
         kl = 1 + std - mu ** 2 - torch.exp(std)
         kl = torch.sum(kl)
-        kl = kl * -.05
+        kl = kl * -.5
 
         loss = (1 - self.kld_weight) * recon + self.kld_weight * kl
 
