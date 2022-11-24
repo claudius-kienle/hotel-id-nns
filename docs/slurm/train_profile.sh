@@ -6,10 +6,11 @@
 #SBATCH --cpus-per-task=40
 #SBATCH --time=00:30:00
 #SBATCH --gres=gpu:1
-#SBATCH --export=ALL,EXECUTABLE="python hotel_id_nns/scripts/train_vae.py data/configs/train_vae.json"
-#SBATCH --output="data/logs/train_models.out"
-#SBATCH -J TrainVAE
+#SBATCH --export=ALL,EXECUTABLE="python -m torch.utils.bottleneck hotel_id_nns/scripts/train_vae.py data/configs/train_vae.json"
+#SBATCH --output="data/logs/train_models_profile.out"
+#SBATCH -J VAEProfile
 
+# #SBATCH --export=ALL,EXECUTABLE="python hotel_id_nns/scripts/train_vae.py data/configs/train_vae.json"
 #Usually you should set
 export KMP_AFFINITY=compact,1,0
 #export KMP_AFFINITY=verbose,compact,1,0 prints messages concerning the supported affinity

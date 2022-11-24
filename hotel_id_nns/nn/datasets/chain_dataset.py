@@ -23,7 +23,7 @@ class ChainDataset(Dataset):
             T.Resize(size=(size, size)),
             T.PILToTensor(),
             T.ConvertImageDtype(dtype=torch.float32),
-            NormalizeTo(),
+            # NormalizeTo(),
         ])
 
 

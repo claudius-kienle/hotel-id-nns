@@ -4,7 +4,7 @@ from torch import nn
 from hotel_id_nns.nn.losses.KLDLoss import KLDLoss
 
 
-class VAELoss(object):
+class VAELoss2(object):
 
     def __init__(self, kld_weight: float) -> None:
         self.reconstruction_loss = nn.MSELoss()
@@ -19,13 +19,18 @@ class VAELoss(object):
         logvar: torch.Tensor,
         prediction: torch.Tensor,
     ):
-        recon_loss = self.reconstruction_loss(input, prediction)
-        kld_loss = self.kld_loss(mu=mu, logvar=logvar)
-        loss = recon_loss + self.kld_weight * kld_loss 
+        recon = torch.nn.functional.binary_cross_entropy(input=prediction, target=input) * input.shape[:2]
+
+        std = torch.exp(0.5 * logvar)
+        kl = 1 + std - mu ** 2 - torch.exp(std)
+        kl = torch.sum(kl, dim=-1)
+        kl = kl * -.05
+
+        loss = torch.mean(recon + kl)
 
         info = {
-            'kld_loss': kld_loss,
-            'recon_loss': recon_loss,
+            'kld_loss': kl,
+            'recon_loss': recon,
         }
 
         return loss, info
