@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 import pandas as pd
 import torch
 import torchvision.transforms as T
@@ -15,6 +16,7 @@ class ChainDataset(Dataset):
         assert annotations_file_path.exists()
 
         size = config['input_size']
+        self.num_chain_id_classes = config['num_chain_id_classes']
 
         self.ds_path = annotations_file_path.parent / "train_images"
         self.chain_annotations = pd.read_csv(annotations_file_path, names=['path', 'chain_id'], sep=' ')
@@ -31,11 +33,15 @@ class ChainDataset(Dataset):
         return len(self.chain_annotations)
 
     def __getitem__(self, index) -> torch.Tensor:
+        # t1 = time.time()
         entry = self.chain_annotations.iloc[index]
         file_path = self.ds_path / entry.path
 
         img = Image.open(file_path)
-
         img_tensor = self.preprocess(img).to(torch.float32)
-        return img_tensor, entry.chain_id
+
+        chain_id = torch.as_tensor(entry.chain_id)
+        # onehot_chain_id = torch.nn.functional.one_hot(chain_id, num_classes=self.num_chain_id_classes)
+        # print("img loading took %e" % (time.time() - t1))
+        return img_tensor, chain_id
 

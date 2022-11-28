@@ -142,7 +142,7 @@ class Trainer:
         # iterate over the validation set
         for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
             with torch.no_grad():
-                _, batch_loss, info = self.infer(net, batch, loss_criterion)
+                batch_loss, info = self.infer(net, batch, loss_criterion)
                 loss += batch_loss
 
         net.train()
@@ -155,7 +155,7 @@ class Trainer:
         in_img = in_img[None] # add batch dim
         batch = (in_img, [label])
 
-        prediction, _, info = self.infer(net, batch, loss_criterion)
+        _, info = self.infer(net, batch, loss_criterion)
 
         histograms = {}
         for tag, value in net.named_parameters():
@@ -165,15 +165,12 @@ class Trainer:
 
         # visualizate images
         in_img = batch[0].squeeze().cpu().numpy().transpose((1, 2, 0))
-        pred_img = prediction.cpu().detach().squeeze().numpy().transpose((1, 2, 0))
 
         return {
             'input': {
                 'rgb': wandb.Image(in_img),
             },
-            'output': {
-                'pred': wandb.Image(pred_img),
-            },
+            **info,
             **histograms
         }
 
@@ -242,7 +239,7 @@ class Trainer:
                 {config.get_printout()}
             ''')"""
 
-        if config.load_from_model:
+        if config.load_from_model and str(config.load_from_model).lower() != 'none':
             net.load_state_dict(torch.load(ROOT_DIR / config.load_from_model, map_location='cpu'))
 
         net = nn.DataParallel(net)
@@ -315,11 +312,13 @@ class Trainer:
             net.train()
             epoch_loss = 0
             with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{config.epochs}', unit='img') as pbar:
-               for batch in train_loader:
+               iter_train_loder = iter(train_loader)
+               for i in range(len(train_loader)):
+                    batch = next(iter_train_loder)
                     optimizer.zero_grad(set_to_none=True)
 
                     with torch.cuda.amp.autocast(enabled=config.amp):
-                        _, loss, info = self.infer(net, batch, loss_criterion)
+                        loss, info = self.infer(net, batch, loss_criterion)
 
                     assert not torch.isnan(loss)
 

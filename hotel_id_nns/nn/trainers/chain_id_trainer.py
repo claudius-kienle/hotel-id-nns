@@ -1,33 +1,29 @@
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import torch
 from torch.utils.data import Dataset
-import wandb
 from hotel_id_nns.nn.losses.VAELoss import VAELoss
 from hotel_id_nns.nn.losses.vae_loss_2 import VAELoss2
 from hotel_id_nns.nn.modules.VAE import VAE
 from hotel_id_nns.nn.trainers.trainer import Trainer
 
 
-class VAETrainer(Trainer):
+class ChainIDTrainer(Trainer):
 
     class Config(Trainer.Config):
 
         def __init__(
             self,
-            kld_loss_weight: float,
             **kwargs,
         ):
             super().__init__(**kwargs)
-            self.kld_loss_weight = kld_loss_weight
 
         @staticmethod
         def from_config(config: dict):
             parent_conf = Trainer.Config.from_config(config)
-            return VAETrainer.Config(
+            return ChainIDTrainer.Config(
                 **dict(parent_conf),
-                kld_loss_weight=config['kld_loss_weight']
             )
         
 
@@ -38,24 +34,21 @@ class VAETrainer(Trainer):
     ):
         super().__init__(trainer_id, device)
 
-    def infer(self, net: VAE, batch, loss_criterion: VAELoss) -> Tuple[torch.Tensor, Dict]:
+    def infer(self, net: VAE, batch, loss_criterion) -> Tuple[torch.Tensor, torch.Tensor]:
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)
 
-        output_img, mu, logvar = net(input_img)
+        pred_chain_id = net(input_img)
 
-        # from matplotlib import pyplot as plt
-        # _, ax = plt.subplots(2,1)
-        # ax[0].imshow(input_img[0].transpose(0, 2))
-        # ax[1].imshow(output_img[0].transpose(0, 2).detach())
-        # plt.show()
+        loss = loss_criterion(pred_chain_id, chain_id)
 
-        loss, info = loss_criterion(prediction=output_img, input=input_img, mu=mu, logvar=logvar)
-
-        if 'output' not in info:
-            info['output'] = {}
-        info['output']['pred'] = wandb.Image(output_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+        info = {
+            'output': {
+                'pred': pred_chain_id,
+                'true': chain_id
+            }
+        }
 
         return loss, info
 
@@ -68,7 +61,7 @@ class VAETrainer(Trainer):
         val_ds: Dataset,
     ):
         # loss_criterion = VAELoss(kld_weight=config.kld_loss_weight)
-        loss_criterion = VAELoss2(kld_weight=config.kld_loss_weight)
+        loss_criterion = torch.nn.NLLLoss()
         return super()._train(
             net=net,
             config=config,
