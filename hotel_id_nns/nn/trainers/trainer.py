@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch import optim
 from torch.utils.data import RandomSampler
 from torch.utils.data import DataLoader, Dataset
-from hotel_id_nns.nn.losses.VAELoss import VAELoss
+from hotel_id_nns.nn.losses.vae_loss import VAELoss
 import wandb
 from tqdm import tqdm
 
@@ -58,7 +58,7 @@ class Trainer:
                 activate_wandb: bool,
                 optimizer_name: str,
                 load_from_model: Optional[Path],
-                dataloader_num_workers: int,
+                dataloader_num_workers: Optional[int],
         ):
             self.epochs = epochs
             self.batch_size = batch_size
@@ -87,7 +87,7 @@ class Trainer:
                 viz_interval=config['viz_interval'],
                 optimizer_name=config['optimizer_name'],
                 load_from_model=Path(config['load_from_model']) if 'load_from_model' in config else None,
-                dataloader_num_workers=config['dataloader_num_workers'] if 'dataloader_num_workers' in config else os.cpu_count(),
+                dataloader_num_workers=config['dataloader_num_workers'] if 'dataloader_num_workers' in config else None,
             )
 
         def __iter__(self):
@@ -107,6 +107,7 @@ class Trainer:
                 Visualization Interval  {self.viz_interval}
                 Optimizer Name:         {self.optimizer_name}
                 Load From Model:        {self.load_from_model}
+                Num Dataloader Worker:  {self.dataloader_num_workers}
             """
 
     def __init__(
@@ -124,7 +125,7 @@ class Trainer:
         # self.dataset_config = dataset_config
 
     @abstractmethod
-    def infer( self, net, batch, loss_criterion):
+    def infer( self, net, batch, loss_criterion, detailed_info: bool = False):
         raise NotImplementedError()
 
     def evaluate(
@@ -142,7 +143,7 @@ class Trainer:
         # iterate over the validation set
         for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
             with torch.no_grad():
-                batch_loss, info = self.infer(net, batch, loss_criterion)
+                batch_loss, _ = self.infer(net, batch, loss_criterion)
                 loss += batch_loss
 
         net.train()
@@ -153,9 +154,10 @@ class Trainer:
         idx = random.randint(0, len(dataloader) - 1)
         in_img, label = dataloader.dataset[idx]
         in_img = in_img[None] # add batch dim
-        batch = (in_img, [label])
+        label = label[None]
+        batch = (in_img, label)
 
-        _, info = self.infer(net, batch, loss_criterion)
+        _, info = self.infer(net, batch, loss_criterion, detailed_info=True)
 
         histograms = {}
         for tag, value in net.named_parameters():
@@ -227,37 +229,28 @@ class Trainer:
                 {config}'''
         )
 
-        """logging.info(f'''Starting training:
-            Training size:       {n_train}
-            Validation size:     {n_val}
-            Device:              {self.device.type}
-            Network Config:
-                {net.config.get_printout()}
-            Dataset Config:      
-                {self.dataset_config.get_printout()}
-            Trainer Config:
-                {config.get_printout()}
-            ''')"""
-
         if config.load_from_model and str(config.load_from_model).lower() != 'none':
             net.load_state_dict(torch.load(ROOT_DIR / config.load_from_model, map_location='cpu'))
 
+        # allot network to run on multiple gpus
         net = nn.DataParallel(net)
         net.to(self.device)
 
+        # create train and val data loader
         loader_args = dict(
             batch_size=config.batch_size,
-            num_workers=config.dataloader_num_workers,
             pin_memory=True
         )
         train_loader = DataLoader(
             train_ds,
             shuffle=True,
+            num_workers=config.dataloader_num_workers,
             **loader_args
         )
         val_loader = DataLoader(
             val_ds,
             shuffle=False,
+            num_workers=max(round(config.dataloader_num_workers * 0.1), 1),
             **loader_args
         )
 
@@ -295,6 +288,7 @@ class Trainer:
         else:
             RuntimeError(f"invalid optimizer name given {config.optimizer_name}")
 
+        # create learning rate reducer and gradient scaler to speedup convergency
         lr_updates_per_epoch = max(n_train // config.val_interval, 1)
         lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
@@ -332,6 +326,7 @@ class Trainer:
                     global_step += 1
                     epoch_loss += loss.item()
 
+                    # log infer to wandb
                     if config.activate_wandb:
                         experiment.log({
                             'step': global_step * config.batch_size,
@@ -343,7 +338,7 @@ class Trainer:
 
                     pbar.set_postfix(**{'loss (batch)': loss.item()})
 
-                    # Visualization round
+                    # Visualization round (this will upload more detailed info to wandb, which is rather costly)
                     if global_step % division_step == 0 and config.activate_wandb:
                         logging.debug("visualization round")
                         experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
@@ -351,6 +346,7 @@ class Trainer:
                         experiment_log['epoch'] = epoch
                         experiment.log(experiment_log)
 
+                    # validation round used to update learning rate
                     if global_step % (n_train // (config.batch_size * lr_updates_per_epoch)) == 0:
                         logging.debug("evaluation round")
                         # validation round to adapt learning rate

@@ -3,8 +3,9 @@ from math import floor
 from typing import List, Tuple
 import torch
 from torch import nn
-from hotel_id_nns.nn.modules.ConvLayer import ConvLayer
-from hotel_id_nns.nn.modules.Decoder import Decoder
+from hotel_id_nns.nn.modules.conv_layer import ConvLayer
+from hotel_id_nns.nn.modules.decoder import Decoder
+from hotel_id_nns.nn.modules.global_avg_pool_2d import GlobalAvgPool2d
 
 
 class ClassNet(nn.Module):
@@ -27,12 +28,6 @@ class ClassNet(nn.Module):
         kernel_size = 3
         stride = 2
 
-        out_size = in_size
-        for _ in range(len(hidden_channels)):
-            out_size = floor((out_size - kernel_size + 2 * padding) / stride + 1)
-
-        latent_size = out_size**2 * channels[-1]
-
         modules = [
             ConvLayer(in_channels=channels[i],
                       out_channels=channels[i + 1],
@@ -41,19 +36,22 @@ class ClassNet(nn.Module):
                       kernel_size=kernel_size) for i in range(len(channels) - 1)
         ]
 
+        self.global_avg_pool = GlobalAvgPool2d()
+
         fcs = [
-            nn.Linear(in_features=latent_size, out_features=latent_size),
-            nn.Linear(in_features=latent_size, out_features=num_classes)
+            nn.Linear(in_features=channels[-1], out_features=channels[-1]),
+            nn.Linear(in_features=channels[-1], out_features=num_classes)
         ]
 
         self.backbone = nn.Sequential(*modules)
         self.fcs = nn.Sequential(
             nn.Flatten(),
             *fcs,
-            nn.Softmax(dim=-1),
+            nn.LogSoftmax(dim=-1),
         )
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         features = self.backbone(input)
+        features = self.global_avg_pool(features)
         class_probs = self.fcs(features)
         return class_probs

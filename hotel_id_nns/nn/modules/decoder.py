@@ -3,7 +3,7 @@ import torch
 from typing import List
 from torch import nn
 
-from hotel_id_nns.nn.modules.ConvTransposeLayer import ConvTransposeLayer
+from hotel_id_nns.nn.modules.conv_transpose_layer import ConvTransposeLayer
 
 
 class Decoder(nn.Module):

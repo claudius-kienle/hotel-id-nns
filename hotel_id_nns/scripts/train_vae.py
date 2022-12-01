@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
-from hotel_id_nns.nn.modules.VAE import VAE
+from hotel_id_nns.nn.modules.vae import VAE
 from hotel_id_nns.nn.trainers.vae_trainer import VAETrainer
 
 dir_path = Path(__file__).parent

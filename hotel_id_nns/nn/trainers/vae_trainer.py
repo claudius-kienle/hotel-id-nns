@@ -4,9 +4,8 @@ from typing import Dict, Optional, Tuple
 import torch
 from torch.utils.data import Dataset
 import wandb
-from hotel_id_nns.nn.losses.VAELoss import VAELoss
-from hotel_id_nns.nn.losses.vae_loss_2 import VAELoss2
-from hotel_id_nns.nn.modules.VAE import VAE
+from hotel_id_nns.nn.losses.vae_loss import VAELoss
+from hotel_id_nns.nn.modules.vae import VAE
 from hotel_id_nns.nn.trainers.trainer import Trainer
 
 
@@ -38,7 +37,7 @@ class VAETrainer(Trainer):
     ):
         super().__init__(trainer_id, device)
 
-    def infer(self, net: VAE, batch, loss_criterion: VAELoss) -> Tuple[torch.Tensor, Dict]:
+    def infer(self, net: VAE, batch, loss_criterion: VAELoss, detailed_info: bool = False) -> Tuple[torch.Tensor, Dict]:
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)
@@ -68,7 +67,7 @@ class VAETrainer(Trainer):
         val_ds: Dataset,
     ):
         # loss_criterion = VAELoss(kld_weight=config.kld_loss_weight)
-        loss_criterion = VAELoss2(kld_weight=config.kld_loss_weight)
+        loss_criterion = VAELoss(kld_weight=config.kld_loss_weight)
         return super()._train(
             net=net,
             config=config,

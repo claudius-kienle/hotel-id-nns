@@ -4,7 +4,7 @@ import torch
 from typing import List
 from torch import nn
 
-from hotel_id_nns.nn.modules.ConvLayer import ConvLayer
+from hotel_id_nns.nn.modules.conv_layer import ConvLayer
 
 
 class Encoder(nn.Module):

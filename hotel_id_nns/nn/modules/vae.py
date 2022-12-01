@@ -2,9 +2,9 @@ import copy
 from typing import List, Tuple
 import torch
 from torch import nn
-from hotel_id_nns.nn.modules.Decoder import Decoder
+from hotel_id_nns.nn.modules.decoder import Decoder
 
-from hotel_id_nns.nn.modules.Encoder import Encoder
+from hotel_id_nns.nn.modules.encoder import Encoder
 
 
 class VAE(nn.Module):
@@ -33,7 +33,7 @@ class VAE(nn.Module):
             in_features=encoder_out_features,
             out_features=latent_dim,
         )
-
+        
         self.decoder_input = nn.Linear(
             in_features=latent_dim,
             out_features=encoder_out_features,
