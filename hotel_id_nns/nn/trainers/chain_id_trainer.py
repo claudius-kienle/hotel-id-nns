@@ -55,20 +55,31 @@ class ChainIDTrainer(Trainer):
         input_img = input_img.to(device=self.device)
         chain_id = chain_id.to(device=self.device)
 
-        pred_chain_id = net(input_img)
+        pred_chain_id_probs = net(input_img)
+        num_classes = pred_chain_id_probs.shape[-1]
+        pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
 
         if isinstance(loss_criterion, torch.nn.NLLLoss):
-            loss = loss_criterion(pred_chain_id, chain_id)
+            loss = loss_criterion(pred_chain_id_probs, chain_id)
         elif isinstance(loss_criterion, torch.nn.BCEWithLogitsLoss):
-            num_classes = pred_chain_id.shape[-1]
-            loss = loss_criterion(pred_chain_id, torch.nn.functional.one_hot(chain_id, num_classes=num_classes).to(torch.float32))
+
+            loss = loss_criterion(pred_chain_id_probs, torch.nn.functional.one_hot(chain_id, num_classes=num_classes).to(torch.float32))
         else:
             raise NotImplementedError()
 
-        accuracy = (torch.argmax(pred_chain_id, dim=-1) == chain_id).sum() / len(chain_id)
+        indices = num_classes * chain_id + pred_chain_id
+        cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
+
+        accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
+        precision = cm.diag() / (cm.sum(dim=0) + 1e-15)
+        recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
+        f1 = 2 * precision * recall / (precision + recall + 1e-15)
 
         info = {
-            'accuary': accuracy,
+            'accuracy': accuracy,
+            'precision':precision.mean(), 
+            'recall': recall.mean(),
+            'f1': f1.mean(),
         }
 
         if detailed_info:
