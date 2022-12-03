@@ -55,20 +55,25 @@ class ChainIDTrainer(Trainer):
         input_img = input_img.to(device=self.device)
         chain_id = chain_id.to(device=self.device)
 
-        pred_chain_id = net(input_img)
+        pred_chain_id_probs = net(input_img)
+        num_classes = pred_chain_id_probs.shape[-1]
+        pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
 
-        if isinstance(loss_criterion, torch.nn.NLLLoss):
-            loss = loss_criterion(pred_chain_id, chain_id)
-        elif isinstance(loss_criterion, torch.nn.BCEWithLogitsLoss):
-            num_classes = pred_chain_id.shape[-1]
-            loss = loss_criterion(pred_chain_id, torch.nn.functional.one_hot(chain_id, num_classes=num_classes).to(torch.float32))
-        else:
-            raise NotImplementedError()
+        loss = loss_criterion(pred_chain_id_probs, chain_id)
 
-        accuracy = (torch.argmax(pred_chain_id, dim=-1) == chain_id).sum() / len(chain_id)
+        indices = num_classes * chain_id + pred_chain_id
+        cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
+
+        accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
+        precision = cm.diag() / (cm.sum(dim=0) + 1e-15)
+        recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
+        f1 = 2 * precision * recall / (precision + recall + 1e-15)
 
         info = {
-            'accuary': accuracy,
+            'accuracy': accuracy,
+            'precision':precision.mean(), 
+            'recall': recall.mean(),
+            'f1': f1.mean(),
         }
 
         if detailed_info:
@@ -85,10 +90,12 @@ class ChainIDTrainer(Trainer):
         val_ds: Dataset,
     ):
         loss_type = config.loss_type
-        if loss_type == 'NNLoss':
-            loss_criterion = torch.nn.NLLLoss()
-        elif loss_type == 'BCELoss':
-            loss_criterion = torch.nn.BCEWithLogitsLoss()
+        if loss_type == 'NegativeLogLikelihood':
+            loss_criterion = torch.nn.NLLLoss(reduction='mean')
+        elif loss_type == 'CrossEntropy':
+            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean')
+        else:
+            raise NotImplementedError()
 
         return super()._train(
             net=net,

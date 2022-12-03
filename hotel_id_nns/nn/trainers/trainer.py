@@ -233,7 +233,9 @@ class Trainer:
             net.load_state_dict(torch.load(ROOT_DIR / config.load_from_model, map_location='cpu'))
 
         # allot network to run on multiple gpus
-        net = nn.DataParallel(net)
+        # outdated: net = nn.DataParallel(net)
+        if hasattr(torch, 'compile'): # exploit pytorch 2.0 if installed (~ 2x performance)
+            net = torch.compile(net)
         net.to(self.device)
 
         # create train and val data loader

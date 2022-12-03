@@ -1,4 +1,37 @@
-# setup dataset
+Development
+===
+
+0. Install Mamba
+
+    Mamba is a way faster C++ implementation of the prominent package manager conda.
+    It can be installed with
+    ```bash
+    > curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+    > bash Mambaforge-$(uname)-$(uname -m).sh
+    ```
+    *Note: Go to https://mamba.readthedocs.io/en/latest/installation.html for further details*
+
+1.  Setup conda environment 
+
+    ```bash
+    > mamba env create -f environment.yaml
+    > mamba activate hotel-id-nns
+    ```
+
+2. Install `hotel-id-nns` package
+
+    For development, this repo should be installed as pip editable install. This requires pip version 22.*
+
+    ```bash
+    > pip install -e . --config-settings editable_mode=compat --no-deps
+    ```
+
+    *Note: the argument `config-settings editable_mode=compat` enables the linter to work correctly.*
+
+
+Setup Dataset
+===
+
 1. Goto [kaggle](https://www.kaggle.com/competitions/hotel-id-2021-fgvc8/data) and download the dataset zip
 1. Extract it to dataset/hotel-id-2021-fgvc8. The directory structure should look like this:
     ```
@@ -14,19 +47,3 @@
     python tools/hotel_dataset_converter.py dataset/hotel-id-2021-fgvc8/train.csv dataset/ --seed 0
     ```
 1. The generated train, val and test files contain rows in the format `image-path class-idx` where class-idx is the index of the class-label which are listed in `hotel_classes_` file.
-
-# Development
-
-First setup the virtual conda environmnent with
-
-```bash
-conda env create -f environment.yaml
-conda activate hotel-id-nns
-```
-
-Install the `hotel-id-nns` as editable install with pip to start development without any setup. This requires pip version 22.*
-
-```bash
-pip install -e . --config-settings editable_mode=strict
-
-```
