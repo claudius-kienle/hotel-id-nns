@@ -59,13 +59,7 @@ class ChainIDTrainer(Trainer):
         num_classes = pred_chain_id_probs.shape[-1]
         pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
 
-        if isinstance(loss_criterion, torch.nn.NLLLoss):
-            loss = loss_criterion(pred_chain_id_probs, chain_id)
-        elif isinstance(loss_criterion, torch.nn.BCEWithLogitsLoss):
-
-            loss = loss_criterion(pred_chain_id_probs, torch.nn.functional.one_hot(chain_id, num_classes=num_classes).to(torch.float32))
-        else:
-            raise NotImplementedError()
+        loss = loss_criterion(pred_chain_id_probs, chain_id)
 
         indices = num_classes * chain_id + pred_chain_id
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
@@ -96,10 +90,10 @@ class ChainIDTrainer(Trainer):
         val_ds: Dataset,
     ):
         loss_type = config.loss_type
-        if loss_type == 'NNLoss':
-            loss_criterion = torch.nn.NLLLoss()
-        elif loss_type == 'BCELoss':
-            loss_criterion = torch.nn.BCEWithLogitsLoss()
+        if loss_type == 'NegativeLogLikelihood':
+            loss_criterion = torch.nn.NLLLoss(reduction='mean')
+        elif loss_type == 'CrossEntropy':
+            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean')
 
         return super()._train(
             net=net,
