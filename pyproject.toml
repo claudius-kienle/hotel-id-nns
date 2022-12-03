@@ -6,5 +6,4 @@ name = "hotel-id-nns"
 version = "0.0.1"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [
-]
+dependencies = []

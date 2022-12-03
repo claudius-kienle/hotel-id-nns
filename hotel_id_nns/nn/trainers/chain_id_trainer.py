@@ -94,6 +94,8 @@ class ChainIDTrainer(Trainer):
             loss_criterion = torch.nn.NLLLoss(reduction='mean')
         elif loss_type == 'CrossEntropy':
             loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean')
+        else:
+            raise NotImplementedError()
 
         return super()._train(
             net=net,
