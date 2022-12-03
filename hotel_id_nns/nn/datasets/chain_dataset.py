@@ -23,6 +23,11 @@ class ChainDataset(Dataset):
         size = config['input_size']
 
         self.num_chain_id_classes = config['num_chain_id_classes']
+        
+        chain_id_weights_file = annotations_file_path.parent / "chain_id_weights.csv"
+        assert chain_id_weights_file.exists()
+        chain_id_weights = pd.read_csv(chain_id_weights_file, index_col='chain_id').sort_index()
+        self.chain_id_weights = torch.as_tensor(chain_id_weights['weights'].values,  dtype=torch.float32)
 
         self.ds_path = annotations_file_path.parent / "train_images"
         self.chain_annotations = pd.read_csv(annotations_file_path, names=['path', 'chain_id'], sep=' ')

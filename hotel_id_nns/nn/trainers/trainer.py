@@ -141,8 +141,8 @@ class Trainer:
         loss = 0
 
         # iterate over the validation set
-        for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
-            with torch.no_grad():
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
                 batch_loss, _ = self.infer(net, batch, loss_criterion)
                 loss += batch_loss
 
@@ -230,12 +230,17 @@ class Trainer:
         )
 
         if config.load_from_model and str(config.load_from_model).lower() != 'none':
-            net.load_state_dict(torch.load(ROOT_DIR / config.load_from_model, map_location='cpu'))
+            weights = torch.load(ROOT_DIR / config.load_from_model, map_location='cpu')
+            if list(weights.keys())[0].startswith('module.'):
+                net = nn.DataParallel(net)
+                net.load_state_dict(weights)
+            else:
+                net.load_state_dict(weights)
+                net = nn.DataParallel(net)
+        else:
+            net = nn.DataParallel(net)
 
         # allot network to run on multiple gpus
-        # outdated: net = nn.DataParallel(net)
-        if hasattr(torch, 'compile'): # exploit pytorch 2.0 if installed (~ 2x performance)
-            net = torch.compile(net)
         net.to(self.device)
 
         # create train and val data loader
@@ -252,7 +257,7 @@ class Trainer:
         val_loader = DataLoader(
             val_ds,
             shuffle=False,
-            num_workers=max(round(config.dataloader_num_workers * 0.1), 1),
+            num_workers=max(round(config.dataloader_num_workers * 0.5), 1),
             **loader_args
         )
 
