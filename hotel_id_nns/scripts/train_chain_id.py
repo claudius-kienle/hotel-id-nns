@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 import json
 import logging
 from pathlib import Path
+import torch
 import torchvision
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.modules.class_net import ClassNet
@@ -37,7 +38,10 @@ def train_chain_id(args):
         num_classes=ds_config['num_chain_id_classes']
     )
 
-    class_net =  torchvision.models.resnet50(num_classes=ds_config['num_chain_id_classes'])
+    weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
+    class_net =  torchvision.models.resnet50(weights=weights) # ,num_classes=
+    class_net.fc = torch.nn.Linear(512 * torchvision.models.resnet.Bottleneck.expansion, ds_config['num_chain_id_classes'])
+    # class_net =  torchvision.models.resnet50(num_classes=ds_config['num_chain_id_classes'])
     class_net.name = "ClassNet"
 
     trainer.train(

@@ -36,7 +36,10 @@ class ChainDataset(Dataset):
             # NormalizeTo(),
         ])
 
+        import torchvision
+        weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
         self.preprocess = T.Compose(preprocess_steps)
+        self.preprocess = weights.transforms()
 
 
     def __len__(self) -> int:
