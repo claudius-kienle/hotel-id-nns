@@ -30,7 +30,7 @@ def to_hdf5(ds_path):
 
     with h5py.File(hdf5_path, 'w') as f:
         train_ds_imgs = f.create_dataset('img', (len(ds.index), 3, crop_size, crop_size),
-                                         dtype=np.float32)
+                                         dtype=np.uint8)
         train_ds_chain_ids = f.create_dataset('chain_id', (len(ds.index), ), dtype=np.int32)
 
         print('creating tensors...')
