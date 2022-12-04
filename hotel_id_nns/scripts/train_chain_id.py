@@ -23,9 +23,9 @@ def train_chain_id(args):
     ds_config = config['dataset']
     data_path = args.data_path if args.data_path is not None else repo_path
     train_annotations = Path(data_path / ds_config['training'])
-    train_ds = DatasetFactory().get(annotations_file_path=train_annotations, config=config['dataset'])
+    train_ds = DatasetFactory().get(train_annotations, config=config['dataset'])
     val_annotations = Path(data_path / ds_config['validation'])
-    val_ds = DatasetFactory().get(annotations_file_path=val_annotations, config=config['dataset'])
+    val_ds = DatasetFactory().get(val_annotations, config=config['dataset'])
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 

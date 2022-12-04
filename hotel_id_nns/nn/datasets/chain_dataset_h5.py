@@ -1,5 +1,6 @@
 from pathlib import Path
 import time
+from typing import Iterable, Tuple
 import h5py
 import PIL
 import pandas as pd
@@ -35,12 +36,24 @@ class H5ChainDataset(Dataset):
         self.imgs = dataset['img']
         self.chain_ids = dataset['chain_id']
 
+        self.preprocess = T.Compose([
+            T.ConvertImageDtype(dtype=torch.float32),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
 
     def __len__(self) -> int:
         return len(self.imgs)
 
+    def __iter__(self) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
+        for img, chain_id in zip(self.imgs, self.chain_ids):
+            img = self.preprocess(torch.as_tensor(img))
+            yield img, torch.as_tensor(chain_id, dtype=torch.long)
+
     def __getitem__(self, index) -> torch.Tensor:
         img = torch.as_tensor(self.imgs[index])
         chain_id = torch.as_tensor(self.chain_ids[index], dtype=torch.long)
+
+        img = self.preprocess(img)
 
         return img, chain_id

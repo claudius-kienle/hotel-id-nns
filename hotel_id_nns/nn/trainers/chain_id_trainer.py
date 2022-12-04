@@ -99,7 +99,7 @@ class ChainIDTrainer(Trainer):
         val_ds: ChainDataset,
     ):
         loss_type = config.loss_type
-        chain_id_weights = train_ds.chain_id_weights
+        chain_id_weights = train_ds.chain_id_weights.to(self.device)
         if loss_type == 'NegativeLogLikelihood':
             loss_criterion = torch.nn.NLLLoss(reduction='mean', weight=chain_id_weights)
         elif loss_type == 'CrossEntropy':
