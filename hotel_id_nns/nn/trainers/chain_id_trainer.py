@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 import wandb
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
+from hotel_id_nns.utils.plotting import plot_confusion_matrix
 
 
 class ChainIDTrainer(Trainer):
@@ -67,11 +68,7 @@ class ChainIDTrainer(Trainer):
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
         
         if self.verbose:
-            from matplotlib import pyplot as plt
-            plt.matshow(cm)
-            plt.xlabel('Predicted Chain ID')
-            plt.ylabel('True Chain ID')
-            plt.show()
+            plot_confusion_matrix(cm)
 
         accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
         precision = cm.diag() / (cm.sum(dim=0) + 1e-15)

@@ -15,6 +15,8 @@ from hotel_id_nns.nn.losses.vae_loss import VAELoss
 import wandb
 from tqdm import tqdm
 
+from hotel_id_nns.utils.pytorch import load_model_weights
+
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
@@ -230,15 +232,9 @@ class Trainer:
         )
 
         if config.load_from_model and str(config.load_from_model).lower() != 'none':
-            weights = torch.load(ROOT_DIR / config.load_from_model, map_location='cpu')
-            if list(weights.keys())[0].startswith('module.'):
-                net = nn.DataParallel(net)
-                net.load_state_dict(weights)
-            else:
-                net.load_state_dict(weights)
-                net = nn.DataParallel(net)
-        else:
-            net = nn.DataParallel(net)
+            net.load_state_dict(load_model_weights(ROOT_DIR / config.load_from_model))
+
+        # not needed currently (only 1 gpu training on): net = nn.DataParallel(net)
 
         # allot network to run on multiple gpus
         net.to(self.device)

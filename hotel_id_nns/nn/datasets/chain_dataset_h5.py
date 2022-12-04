@@ -22,8 +22,6 @@ class H5ChainDataset(Dataset):
 
         assert annotations_file_path.exists()
 
-        size = config['input_size']
-
         self.num_chain_id_classes = config['num_chain_id_classes']
         
         chain_id_weights_file = annotations_file_path.parent / "chain_id_weights.csv"
