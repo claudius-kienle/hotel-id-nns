@@ -8,6 +8,7 @@ import wandb
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
+from hotel_id_nns.utils.pytorch import get_accuracy
 
 
 class ChainIDTrainer(Trainer):
@@ -56,13 +57,15 @@ class ChainIDTrainer(Trainer):
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)
-        chain_id = chain_id.to(device=self.device)
+        chain_id = chain_id.to(device=self.device).squeeze()
 
         pred_chain_id_probs = net(input_img)
         num_classes = pred_chain_id_probs.shape[-1]
         pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
 
         loss = loss_criterion(pred_chain_id_probs, chain_id)
+
+        acc1, acc5 = get_accuracy(pred_chain_id_probs, chain_id, topk=(1, 5))
 
         indices = num_classes * chain_id + pred_chain_id
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))

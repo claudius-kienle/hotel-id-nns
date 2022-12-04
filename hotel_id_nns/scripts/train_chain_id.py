@@ -38,7 +38,7 @@ def train_chain_id(args):
         in_size=ds_config['input_size'],
         in_channels=3,
         hidden_channels=[32, 64, 128, 256, 512],
-        num_classes=ds_config['num_chain_id_classes']
+        num_classes=train_ds.num_chain_id_classes
     )
 
     weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
@@ -47,7 +47,7 @@ def train_chain_id(args):
     n_inputs = class_net.fc.in_features
     # add more layers as required
     classifier = torch.nn.Sequential(OrderedDict([
-        ('fc1', torch.nn.Linear(n_inputs, ds_config['num_chain_id_classes']))
+        ('fc1', torch.nn.Linear(n_inputs, train_ds.num_chain_id_classes))
     ]))
     class_net.fc = classifier
     # class_net.fc = torch.nn.Linear(512 * torchvision.models.resnet.Bottleneck.expansion, ds_config['num_chain_id_classes'])
