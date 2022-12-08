@@ -48,17 +48,19 @@ class H5ChainDataset(Dataset):
     def __len__(self) -> int:
         return len(self.chain_id_non_zero)
 
-    def __iter__(self) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
-        for img, chain_id in zip(self.imgs, self.chain_ids):
-            if chain_id == 0:
-                continue
-            img = self.preprocess(torch.as_tensor(img))
-            yield img, torch.as_tensor(chain_id, dtype=torch.long)
+    # def __iter__(self) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
+    #     for img, chain_id in zip(self.imgs, self.chain_ids):
+    #         if chain_id == 0:
+    #             continue
+    #         img = self.preprocess(torch.as_tensor(img))
+    #         yield img, torch.as_tensor(chain_id, dtype=torch.long)
 
     def __getitem__(self, index) -> torch.Tensor:
         idx = self.chain_id_non_zero[index]
         img = torch.as_tensor(self.imgs[idx])
         chain_id = self.chain_ids[idx] - 1
+
+        chains = self.chain_ids[self.chain_id_non_zero]
 
         img = self.preprocess(img)
 

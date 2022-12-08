@@ -1,7 +1,7 @@
 .pybuilder/
 target/
 
-data
+# data
 **/__pycache__
 
 # dataset

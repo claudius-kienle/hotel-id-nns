@@ -47,3 +47,20 @@ Setup Dataset
     python tools/hotel_dataset_converter.py dataset/hotel-id-2021-fgvc8/train.csv dataset/ --seed 0
     ```
 1. The generated train, val and test files contain rows in the format `image-path class-idx` where class-idx is the index of the class-label which are listed in `hotel_classes_` file.
+
+Get started with training
+===
+
+The loss functions used during training require weights for each class, since the dataset is unbalanced. These are located in data/dataset.
+
+One can look at the .json configs in data/config\_files for inspiration how training works.
+
+The training can be executed with 
+```bash
+python hotel_id_nns/scripts/train_chain_id.py data/configs/train_chain_id_ce.json
+```
+
+The optional parameter `--data-path` can be used specify where the dataset files and folders are stored at.
+If not given, the script asumes that the files are located under data/dataset.
+
+

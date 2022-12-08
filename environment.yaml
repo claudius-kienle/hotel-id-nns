@@ -12,6 +12,7 @@ dependencies:
   - torchvision>=0.14
   - pytorch>=1.13
   - pytorch-cuda=11.7 # or cpuonly 
+  - h5py
   - pip>=22
   - dvc
   - dvc-ssh

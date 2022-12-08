@@ -41,17 +41,16 @@ def train_chain_id(args):
         num_classes=train_ds.num_chain_id_classes
     )
 
-    weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
-    class_net =  torchvision.models.resnet50(weights=weights) # ,num_classes=
+    model_name = config['model_name']
+    if model_name == 'ResNet50':
+        weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
+        class_net =  torchvision.models.resnet50(weights=weights) # ,num_classes=
+    elif model_name == 'ResNet152':
+        class_net = torchvision.models.resnet152()
 
     n_inputs = class_net.fc.in_features
     # add more layers as required
-    classifier = torch.nn.Sequential(OrderedDict([
-        ('fc1', torch.nn.Linear(n_inputs, train_ds.num_chain_id_classes))
-    ]))
-    class_net.fc = classifier
-    # class_net.fc = torch.nn.Linear(512 * torchvision.models.resnet.Bottleneck.expansion, ds_config['num_chain_id_classes'])
-    # class_net =  torchvision.models.resnet50(num_classes=ds_config['num_chain_id_classes'])
+    class_net.fc = torch.nn.Linear(n_inputs, train_ds.num_chain_id_classes)
     class_net.name = "ClassNet"
 
     trainer.train(
