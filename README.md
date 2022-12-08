@@ -60,7 +60,7 @@ The training can be executed with
 python hotel_id_nns/scripts/train_chain_id.py data/configs/train_chain_id_ce.json
 ```
 
-The optional parameter `--data-path` can be used specify where the dataset files and folders are stored at.
+The optional parameter `--data-path` can be used to specify where the dataset files and folders are stored at.
 If not given, the script asumes that the files are located under data/dataset.
 
 
