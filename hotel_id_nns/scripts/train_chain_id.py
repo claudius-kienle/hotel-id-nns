@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import OrderedDict
 import torch
 import torchvision
-from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
+from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
 from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.class_net import ClassNet
@@ -38,7 +38,7 @@ def train_chain_id(args):
         in_size=ds_config['input_size'],
         in_channels=3,
         hidden_channels=[32, 64, 128, 256, 512],
-        num_classes=train_ds.num_chain_id_classes
+        num_classes=train_ds.num_classes
     )
 
     model_name = config['model_name']
@@ -50,7 +50,7 @@ def train_chain_id(args):
 
     n_inputs = class_net.fc.in_features
     # add more layers as required
-    class_net.fc = torch.nn.Linear(n_inputs, train_ds.num_chain_id_classes)
+    class_net.fc = torch.nn.Linear(n_inputs, train_ds.num_classes)
     class_net.name = "ClassNet"
 
     trainer.train(

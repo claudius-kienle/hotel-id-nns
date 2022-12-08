@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 import json
 import logging
 from pathlib import Path
-from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
+from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.vae import VAE
 from hotel_id_nns.nn.trainers.vae_trainer import VAETrainer
