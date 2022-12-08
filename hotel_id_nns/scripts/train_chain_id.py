@@ -2,9 +2,12 @@ from argparse import ArgumentParser
 import json
 import logging
 from pathlib import Path
+from typing import OrderedDict
 import torch
 import torchvision
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
+from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
+from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.class_net import ClassNet
 from hotel_id_nns.nn.trainers.chain_id_trainer import ChainIDTrainer
 
@@ -21,9 +24,9 @@ def train_chain_id(args):
     ds_config = config['dataset']
     data_path = args.data_path if args.data_path is not None else repo_path
     train_annotations = Path(data_path / ds_config['training'])
-    train_ds = ChainDataset(annotations_file_path=train_annotations, config=config['dataset'])
+    train_ds = DatasetFactory().get(train_annotations, config=config['dataset'])
     val_annotations = Path(data_path / ds_config['validation'])
-    val_ds = ChainDataset(annotations_file_path=val_annotations, config=config['dataset'])
+    val_ds = DatasetFactory().get(val_annotations, config=config['dataset'])
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 
@@ -35,13 +38,19 @@ def train_chain_id(args):
         in_size=ds_config['input_size'],
         in_channels=3,
         hidden_channels=[32, 64, 128, 256, 512],
-        num_classes=ds_config['num_chain_id_classes']
+        num_classes=train_ds.num_chain_id_classes
     )
 
-    weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
-    class_net =  torchvision.models.resnet50(weights=weights) # ,num_classes=
-    class_net.fc = torch.nn.Linear(512 * torchvision.models.resnet.Bottleneck.expansion, ds_config['num_chain_id_classes'])
-    # class_net =  torchvision.models.resnet50(num_classes=ds_config['num_chain_id_classes'])
+    model_name = config['model_name']
+    if model_name == 'ResNet50':
+        weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2
+        class_net =  torchvision.models.resnet50(weights=weights) # ,num_classes=
+    elif model_name == 'ResNet152':
+        class_net = torchvision.models.resnet152()
+
+    n_inputs = class_net.fc.in_features
+    # add more layers as required
+    class_net.fc = torch.nn.Linear(n_inputs, train_ds.num_chain_id_classes)
     class_net.name = "ClassNet"
 
     trainer.train(

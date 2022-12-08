@@ -5,7 +5,10 @@ from torch import nn
 import torch
 from torch.utils.data import Dataset
 import wandb
+from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
+from hotel_id_nns.utils.plotting import plot_confusion_matrix
+# from hotel_id_nns.utils.pytorch import get_accuracy
 
 
 class ChainIDTrainer(Trainer):
@@ -35,6 +38,7 @@ class ChainIDTrainer(Trainer):
         device: Optional[torch.device] = None,
     ):
         super().__init__(trainer_id, device)
+        self.verbose = False
 
     def infer(self, net: nn.Module, batch, loss_criterion, detailed_info: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
         """infers the classification net and computes the loss with the predicted class probs and the true class label
@@ -53,7 +57,7 @@ class ChainIDTrainer(Trainer):
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)
-        chain_id = chain_id.to(device=self.device)
+        chain_id = torch.atleast_1d(chain_id.to(device=self.device).squeeze())
 
         pred_chain_id_probs = net(input_img)
         num_classes = pred_chain_id_probs.shape[-1]
@@ -61,8 +65,13 @@ class ChainIDTrainer(Trainer):
 
         loss = loss_criterion(pred_chain_id_probs, chain_id)
 
+        # acc1, acc5 = get_accuracy(pred_chain_id_probs, chain_id, topk=(1, 5))
+
         indices = num_classes * chain_id + pred_chain_id
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
+        
+        if self.verbose:
+            plot_confusion_matrix(cm)
 
         accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
         precision = cm.diag() / (cm.sum(dim=0) + 1e-15)
@@ -85,15 +94,16 @@ class ChainIDTrainer(Trainer):
         self,
         net: torch.nn.Module,
         config: Config,
-        train_ds: Dataset,
+        train_ds: ChainDataset,
         checkpoint_dir: Path,
-        val_ds: Dataset,
+        val_ds: ChainDataset,
     ):
         loss_type = config.loss_type
+        chain_id_weights = train_ds.chain_id_weights.to(self.device)
         if loss_type == 'NegativeLogLikelihood':
-            loss_criterion = torch.nn.NLLLoss(reduction='mean')
+            loss_criterion = torch.nn.NLLLoss(reduction='mean', weight=chain_id_weights)
         elif loss_type == 'CrossEntropy':
-            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean')
+            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean', weight=chain_id_weights)
         else:
             raise NotImplementedError()
 
