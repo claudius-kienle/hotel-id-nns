@@ -95,6 +95,7 @@ cython_debug/
 #.idea/
 
 .vscode
+.idea
 
 *.egg-info
 build
