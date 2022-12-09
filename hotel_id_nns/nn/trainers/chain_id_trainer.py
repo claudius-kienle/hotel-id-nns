@@ -61,9 +61,14 @@ class ChainIDTrainer(Trainer):
 
         pred_chain_id_probs = net(input_img)
         num_classes = pred_chain_id_probs.shape[-1]
-        pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
+        pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1) 
 
         loss = loss_criterion(pred_chain_id_probs, chain_id)
+
+        # print("pred_probs:", pred_chain_id_probs[0])
+        print("label:", chain_id)
+        print("preds:", pred_chain_id)
+        # print("loss:", loss)
 
         # acc1, acc5 = get_accuracy(pred_chain_id_probs, chain_id, topk=(1, 5))
 

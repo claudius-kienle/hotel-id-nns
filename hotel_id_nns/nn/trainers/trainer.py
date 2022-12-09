@@ -20,6 +20,11 @@ from hotel_id_nns.utils.pytorch import load_model_weights
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
+def set_parameter_requires_grad(model, feature_extracting):
+    if feature_extracting:
+        for param in model.parameters():
+            param.requires_grad = False
+
 
 def get_loss_criterion(loss_type: str):
     # i -> input, t -> target, r -> region mask
@@ -238,6 +243,18 @@ class Trainer:
 
         # allot network to run on multiple gpus
         net.to(self.device)
+        params_to_update = net.parameters()
+        print("Params to learn:")
+        if False: # feature_extract:
+            params_to_update = []
+            for name,param in model_ft.named_parameters():
+                if param.requires_grad == True:
+                    params_to_update.append(param)
+                    print("\t",name)
+        else:
+            for name,param in net.named_parameters():
+                if param.requires_grad == True:
+                    print("\t",name)
 
         # create train and val data loader
         loader_args = dict(
@@ -301,8 +318,9 @@ class Trainer:
             patience=config.lr_patience * lr_updates_per_epoch,
             verbose=True
         )
-        grad_scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+        # grad_scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
         global_step = 0
+        best_val_loss = torch.inf
 
         # Begin training
         for epoch in range(config.epochs):
@@ -310,20 +328,22 @@ class Trainer:
             epoch_loss = 0
             with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{config.epochs}', unit='img') as pbar:
                iter_train_loder = iter(train_loader)
+               net.train()
+
                for i in range(len(train_loader)):
                     batch = next(iter_train_loder)
-                    optimizer.zero_grad(set_to_none=True)
+                    optimizer.zero_grad()
 
                     with torch.cuda.amp.autocast(enabled=config.amp):
                         loss, info = self.infer(net, batch, loss_criterion)
 
                     assert not torch.isnan(loss)
 
-                    grad_scaler.scale(loss).backward()
-                    grad_scaler.step(optimizer)
-                    grad_scaler.update()
-                    # loss.backward()
-                    # optimizer.step()
+                    # grad_scaler.scale(loss).backward()
+                    # grad_scaler.step(optimizer)
+                    # grad_scaler.update()
+                    loss.backward()
+                    optimizer.step()
 
                     pbar.update(config.batch_size)
                     global_step += 1
@@ -348,29 +368,34 @@ class Trainer:
                         experiment_log['step'] = global_step * config.batch_size,
                         experiment_log['epoch'] = epoch
                         experiment.log(experiment_log)
+            
+            net.eval()
 
-                    # validation round used to update learning rate
-                    if global_step % (n_train // (config.batch_size * lr_updates_per_epoch)) == 0:
-                        logging.debug("evaluation round")
-                        # validation round to adapt learning rate
-                        epoch_val_loss = self.evaluate(net, val_loader, loss_criterion)
-                        lr_scheduler.step(epoch_val_loss)
-                        logging.info(
-                            f"lr info: num_bad_epochs {lr_scheduler.num_bad_epochs}, patience {lr_scheduler.patience}, cooldown {lr_scheduler.cooldown_counter} best {lr_scheduler.best}")
-                        logging.info('Validation Loss: {}'.format(epoch_val_loss))
+            # validation round used to update learning rate
+            logging.debug("evaluation round")
+            # validation round to adapt learning rate
+            epoch_val_loss = self.evaluate(net, val_loader, loss_criterion)
+            lr_scheduler.step(epoch_val_loss)
+            logging.info(
+                f"lr info: num_bad_epochs {lr_scheduler.num_bad_epochs}, patience {lr_scheduler.patience}, cooldown {lr_scheduler.cooldown_counter} best {lr_scheduler.best}")
+            logging.info('Validation Loss: {}'.format(epoch_val_loss))
 
-                        if config.activate_wandb:
-                            experiment.log({
-                                'step': global_step * config.batch_size,
-                                'epoch': epoch,
-                                'validation loss': epoch_val_loss,
-                                'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience
-                            })
+            if config.activate_wandb:
+                experiment.log({
+                    'step': global_step * config.batch_size,
+                    'epoch': epoch,
+                    'validation loss': epoch_val_loss,
+                    'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience
+                })
 
-            if config.save_checkpoint:
-                dir_checkpoint.mkdir(parents=True, exist_ok=True)
-                torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
-                logging.info(f'Checkpoint {epoch + 1} saved!')
+            if best_val_loss > epoch_val_loss:
+                best_val_loss = epoch_val_loss
+
+                # save checkpoint if val loss decreased
+                if config.save_checkpoint:
+                    dir_checkpoint.mkdir(parents=True, exist_ok=True)
+                    torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
+                    logging.info(f'Checkpoint {epoch + 1} saved!')
 
         if config.activate_wandb:
             wandb.finish()
