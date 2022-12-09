@@ -79,7 +79,7 @@ class ChainIDTrainer(Trainer):
         }
 
         # if detailed_info:
-        info['cm'] = confusion_matrix(pred_chain_id_probs.cpu().detach().numpy(), chain_ids.cpu().detach().tolist())
+        info['cm'] = confusion_matrix(pred_chain_id_probs.cpu().detach().numpy(), chain_ids.cpu().detach().tolist(), class_names=list(map(str, range(pred_chain_id_probs.shape[1]))))
 
         return loss, info
 
