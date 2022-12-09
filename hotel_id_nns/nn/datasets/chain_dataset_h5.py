@@ -40,21 +40,7 @@ class H5ChainDataset(Dataset):
         # only iterate over samples who's chain_id is not zero. Therefore compute indices of whole dataset where this is the case
         self.imgs = dataset['img']
         self.chain_ids = torch.as_tensor(dataset['chain_id'], dtype=torch.long).squeeze()
-
-        indices_for_each_class = []
-        for i in range(1, self.num_chain_id_classes):
-            indices_of_chain_ids = torch.nonzero(self.chain_ids == i).squeeze()
-            if indices_of_chain_ids.numel() > 1:
-                indices_for_each_class.append(indices_of_chain_ids[0])
-            elif indices_of_chain_ids.numel() == 1:
-                indices_for_each_class.append(indices_of_chain_ids)
-        self.chain_id_non_zero = torch.vstack(indices_for_each_class)
-        self.chain_id_weights[:] = 1 / self.num_chain_id_classes
-        torch.set_printoptions(edgeitems=100)
-        print(self.chain_id_non_zero.squeeze())
-        print(self.chain_ids[self.chain_id_non_zero].squeeze())
-
-        # self.chain_id_non_zero = torch.nonzero(self.chain_ids)
+        self.chain_id_non_zero = torch.nonzero(self.chain_ids)
 
         self.preprocess = T.Compose([
             T.ConvertImageDtype(dtype=torch.float32),
