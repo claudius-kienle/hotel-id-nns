@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional, Tuple
+from matplotlib import pyplot as plt
 from torch import nn
 
 import torch
-from torch.utils.data import Dataset
 import wandb
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
@@ -66,8 +66,8 @@ class ChainIDTrainer(Trainer):
         loss = loss_criterion(pred_chain_id_probs, chain_id)
 
         # print("pred_probs:", pred_chain_id_probs[0])
-        print("label:", chain_id)
-        print("preds:", pred_chain_id)
+        # print("label:", chain_id)
+        # print("preds:", pred_chain_id)
         # print("loss:", loss)
 
         # acc1, acc5 = get_accuracy(pred_chain_id_probs, chain_id, topk=(1, 5))
@@ -76,18 +76,22 @@ class ChainIDTrainer(Trainer):
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
         
         if self.verbose:
-            plot_confusion_matrix(cm)
+            ax = plt.subplot()
+            plot_confusion_matrix(cm, ax=ax)
+            plt.savefig("cm.png")
 
         accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
         precision = cm.diag() / (cm.sum(dim=0) + 1e-15)
         recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
         f1 = 2 * precision * recall / (precision + recall + 1e-15)
 
+        unique_chain_ids = len(torch.unique(chain_id))
+
         info = {
             'accuracy': accuracy,
-            'precision':precision.mean(), 
-            'recall': recall.mean(),
-            'f1': f1.mean(),
+            'precision':precision.sum() / unique_chain_ids,  
+            'recall': recall.sum() / unique_chain_ids,
+            'f1': f1.sum() / unique_chain_ids,
         }
 
         if detailed_info:
