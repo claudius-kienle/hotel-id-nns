@@ -1,20 +1,21 @@
+from itertools import chain
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 from matplotlib import pyplot as plt
 from torch import nn
 
 import torch
 import wandb
+from wandb.plot import confusion_matrix
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
+from hotel_id_nns.utils.pytorch import compute_metrics
 # from hotel_id_nns.utils.pytorch import get_accuracy
 
 
 class ChainIDTrainer(Trainer):
-
     class Config(Trainer.Config):
-
         def __init__(
             self,
             loss_type: str,
@@ -26,11 +27,7 @@ class ChainIDTrainer(Trainer):
         @staticmethod
         def from_config(config: dict):
             parent_conf = Trainer.Config.from_config(config)
-            return ChainIDTrainer.Config(
-                **dict(parent_conf),
-                loss_type=config['loss_type']
-            )
-        
+            return ChainIDTrainer.Config(**dict(parent_conf), loss_type=config['loss_type'])
 
     def __init__(
         self,
@@ -40,7 +37,11 @@ class ChainIDTrainer(Trainer):
         super().__init__(trainer_id, device)
         self.verbose = False
 
-    def infer(self, net: nn.Module, batch, loss_criterion, detailed_info: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+    def infer(self,
+              net: nn.Module,
+              batch,
+              loss_criterion,
+              detailed_info: bool = False) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """infers the classification net and computes the loss with the predicted class probs and the true class label
 
         Arguments:
@@ -54,48 +55,31 @@ class ChainIDTrainer(Trainer):
             loss: computed loss
             info: dict containing debug information to display in wandb
         """
-        input_img, chain_id = batch
+        input_img, chain_ids = batch
 
         input_img = input_img.to(device=self.device)
-        chain_id = torch.atleast_1d(chain_id.to(device=self.device).squeeze())
+        chain_ids = torch.atleast_1d(chain_ids.to(device=self.device).squeeze())
 
         pred_chain_id_probs = net(input_img)
-        num_classes = pred_chain_id_probs.shape[-1]
-        pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1) 
 
-        loss = loss_criterion(pred_chain_id_probs, chain_id)
+        loss = loss_criterion(pred_chain_id_probs, chain_ids)  # type: torch.Tensor
 
-        # print("pred_probs:", pred_chain_id_probs[0])
-        # print("label:", chain_id)
-        # print("preds:", pred_chain_id)
-        # print("loss:", loss)
+        metrics = compute_metrics(pred_chain_id_probs, chain_ids)
 
-        # acc1, acc5 = get_accuracy(pred_chain_id_probs, chain_id, topk=(1, 5))
-
-        indices = num_classes * chain_id + pred_chain_id
-        cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
-        
         if self.verbose:
             ax = plt.subplot()
-            plot_confusion_matrix(cm, ax=ax)
+            plot_confusion_matrix(metrics['cm'], ax=ax)
             plt.savefig("cm.png")
 
-        accuracy = cm.diag().sum() / (cm.sum() + 1e-15)
-        precision = cm.diag() / (cm.sum(dim=0) + 1e-15)
-        recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
-        f1 = 2 * precision * recall / (precision + recall + 1e-15)
-
-        unique_chain_ids = len(torch.unique(chain_id))
-
         info = {
-            'accuracy': accuracy,
-            'precision':precision.sum() / unique_chain_ids,  
-            'recall': recall.sum() / unique_chain_ids,
-            'f1': f1.sum() / unique_chain_ids,
+            'accuracy': metrics['accuracy'],
+            'precision': metrics['precision'],
+            'recall': metrics['recall'],
+            'f1': metrics['f1'],
         }
 
         if detailed_info:
-            info['input'] = wandb.Image(input_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+            info['cm'] = confusion_matrix(pred_chain_id_probs, chain_ids)
 
         return loss, info
 
