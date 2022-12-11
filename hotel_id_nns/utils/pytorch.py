@@ -1,5 +1,9 @@
+from functools import reduce
 from pathlib import Path
+from typing import Dict, List
 import torch
+from torch import nn
+from torch import optim
 
 
 def load_model_weights(path: Path):
@@ -31,3 +35,45 @@ def compute_metrics(pred_chain_id_probs: torch.Tensor, chain_ids: torch.Tensor):
         "f1": f1.sum() / unique_chain_ids,
         "cm": cm,
     }
+
+def aggregate_metics(metricsb: List[Dict]) -> Dict:
+    metrics = {key: [metrics[key] for metrics in metricsb] for key in metricsb[0].keys()}
+    reduced_metrics = {}
+    for key, values in metrics.items():
+        values = torch.hstack(values)
+        if key  == 'cm':
+            reduced_metrics[key] = values.sum(dim=0)
+        else:
+            reduced_metrics[key] = values.mean()
+    return reduced_metrics
+
+
+def get_optimizer(net: nn.Module, name: str, weight_decay: float,
+                  learning_rate: float) -> optim.Optimizer:
+    if name == 'rmsprop':
+        return optim.RMSprop(net.parameters(),
+                             lr=learning_rate,
+                             weight_decay=weight_decay,
+                             momentum=0.9)
+    elif name == 'adam':
+        return optim.Adam(net.parameters(),
+                          lr=learning_rate,
+                          betas=(0.9, 0.999),
+                          eps=1e-08,
+                          weight_decay=weight_decay,
+                          amsgrad=False)
+    elif name == 'amsgrad':
+        return optim.Adam(net.parameters(),
+                          lr=learning_rate,
+                          betas=(0.9, 0.999),
+                          eps=1e-08,
+                          weight_decay=weight_decay,
+                          amsgrad=False)
+    elif name == 'sgd':
+        return optim.SGD(
+            net.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
+        )
+    else:
+        raise RuntimeError(f"invalid optimizer name given {name}")

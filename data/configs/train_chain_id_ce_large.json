@@ -1,7 +1,7 @@
 {
     "trainer": {
         "epochs": 200, 
-        "batch_size": 128,
+        "batch_size": 32,
         "learning_rate": 5e-3,
         "lr_patience": 15,
         "save_checkpoint": true,
@@ -13,7 +13,7 @@
         "loss_type": "CrossEntropy",
         "weight_decay": 1e-2
     },
-    "model_name": "ResNet50",
+    "model_name": "ResNet152",
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
