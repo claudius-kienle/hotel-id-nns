@@ -1,6 +1,6 @@
 [core]
-    remote = server
-[cache]
-    type = "reflink,hardlink,symlink"
-['remote "server"']
-    url = ssh://claudiuskienle@gitlab-ssh.vincentcui.de:9022/var/opt/dvc/hotel-id-nns
+    remote = minio
+['remote "minio"']
+    url = s3://claudius.kienle/dvc/hotel-id-nns
+    endpointurl = https://api.minio.vincentcui.de
+    region = eu-central-virgo

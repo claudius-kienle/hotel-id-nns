@@ -1,0 +1,35 @@
+program: hotel_id_nns/scripts/train_sweep.py
+method: bayes
+project: ClassNet
+metric:
+  goal: minimize
+  name: validation loss
+parameters:
+  optimizer_name:
+    values:
+      - sgd
+      - adam
+    distribution: categorical
+  learning_rate:
+    max: 0.02
+    min: 0.0001
+    distribution: uniform
+  weight_decay:
+    min: 0.0000001
+    max: 0.1
+    distribution: uniform
+  model_name:
+    values:
+      - ResNet18
+      - ResNet50
+    distribution: categorical
+  lr_patience:
+    max: 20
+    min: 3
+    distribution: int_uniform
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - data/configs/train_chain_id_ce.json
+  # - ${args}

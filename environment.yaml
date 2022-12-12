@@ -15,7 +15,7 @@ dependencies:
   - h5py
   - pip>=22
   - dvc
-  - dvc-ssh
+  - dvc-s3
   - auto-sklearn
   - wandb
   - pandas

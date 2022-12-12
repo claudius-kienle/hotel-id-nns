@@ -5,6 +5,7 @@ from pathlib import Path
 import random
 import time
 from typing import Optional
+from joblib import cpu_count
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,10 +16,15 @@ from hotel_id_nns.nn.losses.vae_loss import VAELoss
 import wandb
 from tqdm import tqdm
 
-from hotel_id_nns.utils.pytorch import load_model_weights
-
+from hotel_id_nns.utils.pytorch import aggregate_metics, get_optimizer, load_model_weights
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
+
+
+def set_parameter_requires_grad(model, feature_extracting):
+    if feature_extracting:
+        for param in model.parameters():
+            param.requires_grad = False
 
 
 def get_loss_criterion(loss_type: str):
@@ -48,32 +54,30 @@ class Trainer:
     class Config:
 
         def __init__(
-                self,
-                epochs: int,
-                batch_size: int,
-                learning_rate: float,
-                lr_patience: int,
-                val_interval: int,
-                viz_interval: int,
-                save_checkpoint: bool,
-                amp: bool,
-                activate_wandb: bool,
-                optimizer_name: str,
-                load_from_model: Optional[Path],
-                dataloader_num_workers: Optional[int],
+            self,
+            epochs: int,
+            batch_size: int,
+            learning_rate: float,
+            weight_decay: float,
+            lr_patience: int,
+            save_checkpoint: bool,
+            amp: bool,
+            activate_wandb: bool,
+            optimizer_name: str,
+            load_from_model: Optional[Path],
+            dataloader_num_workers: Optional[int],
         ):
             self.epochs = epochs
             self.batch_size = batch_size
             self.learning_rate = learning_rate
+            self.weight_decay = weight_decay
             self.lr_patience = lr_patience
-            self.val_interval = val_interval
-            self.viz_interval = viz_interval
             self.save_checkpoint = save_checkpoint
             self.amp = amp
             self.activate_wandb = activate_wandb
             self.optimizer_name = optimizer_name
             self.load_from_model = load_from_model
-            self.dataloader_num_workers = dataloader_num_workers
+            self.dataloader_num_workers = dataloader_num_workers if not None else cpu_count()
 
         @staticmethod
         def from_config(config: dict):
@@ -81,15 +85,16 @@ class Trainer:
                 epochs=config['epochs'],
                 batch_size=config['batch_size'],
                 learning_rate=config['learning_rate'],
+                weight_decay=config['weight_decay'],
                 lr_patience=config['lr_patience'],
                 save_checkpoint=config['save_checkpoint'],
                 amp=config['amp'],
                 activate_wandb=config['activate_wandb'],
-                val_interval=config['val_interval'],
-                viz_interval=config['viz_interval'],
                 optimizer_name=config['optimizer_name'],
-                load_from_model=Path(config['load_from_model']) if 'load_from_model' in config else None,
-                dataloader_num_workers=config['dataloader_num_workers'] if 'dataloader_num_workers' in config else None,
+                load_from_model=Path(config['load_from_model'])
+                if 'load_from_model' in config else None,
+                dataloader_num_workers=config['dataloader_num_workers']
+                if 'dataloader_num_workers' in config else None,
             )
 
         def __iter__(self):
@@ -101,12 +106,11 @@ class Trainer:
                 Epochs:                 {self.epochs}
                 Batch Size:             {self.batch_size}
                 Learning Rate:          {self.learning_rate}
+                Weight Decay:           {self.weight_decay}
                 LR Patiance:            {self.lr_patience}
                 Save Checkpoints:       {self.save_checkpoint}
                 AMP:                    {self.amp}
                 WandB:                  {self.activate_wandb}
-                Validation Interval     {self.val_interval}
-                Visualization Interval  {self.viz_interval}
                 Optimizer Name:         {self.optimizer_name}
                 Load From Model:        {self.load_from_model}
                 Num Dataloader Worker:  {self.dataloader_num_workers}
@@ -123,43 +127,29 @@ class Trainer:
         else:
             self.trainer_id = trainer_id
 
-        self.device = device if device is not None else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
-        # self.dataset_config = dataset_config
+        self.device = device if device is not None else (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
 
     @abstractmethod
-    def infer( self, net, batch, loss_criterion, detailed_info: bool = False):
+    def infer(self, net, batch, loss_criterion, detailed_info: bool = False):
         raise NotImplementedError()
 
-    def evaluate(
-        self,
-        net: nn.Module,
-        dataloader: DataLoader,
-        loss_criterion
-    ):
-        net.eval()
+    def evaluate(self, net: nn.Module, dataloader: DataLoader, loss_criterion):
         num_val_batches = len(dataloader)
         assert num_val_batches != 0, "at least one batch must be selected for evaluation"
 
-        loss = 0
-
         # iterate over the validation set
+        infos = []
+        loss = 0
         with torch.no_grad():
             for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
-                batch_loss, _ = self.infer(net, batch, loss_criterion)
+                batch_loss, info = self.infer(net, batch, loss_criterion)
                 loss += batch_loss
+                infos.append(info)
 
-        net.train()
-
-        return loss / num_val_batches
-
-    def __evaluate_for_visualization(self, dataloader: DataLoader, net, loss_criterion):
-        idx = random.randint(0, len(dataloader) - 1)
-        in_img, label = dataloader.dataset[idx]
-        in_img = in_img[None] # add batch dim
-        label = label[None]
-        batch = (in_img, label)
-
-        _, info = self.infer(net, batch, loss_criterion, detailed_info=True)
+        infosb = aggregate_metics(infos)
+        if 'cm' in infosb:
+            infosb.pop('cm')
 
         histograms = {}
         for tag, value in net.named_parameters():
@@ -167,16 +157,9 @@ class Trainer:
             histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
             histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
-        # visualizate images
-        in_img = batch[0].squeeze().cpu().numpy().transpose((1, 2, 0))
+        info = {**infosb, **histograms}
 
-        return {
-            'input': {
-                'rgb': wandb.Image(in_img),
-            },
-            **info,
-            **histograms
-        }
+        return loss / num_val_batches, info
 
     @abstractmethod
     def train(
@@ -188,7 +171,6 @@ class Trainer:
         val_ds: Dataset,
     ):
         raise NotImplementedError()
-
 
     def _train(
         self,
@@ -202,34 +184,29 @@ class Trainer:
         if config.save_checkpoint:
             dir_checkpoint = checkpoint_dir / f"{net.name}" / self.trainer_id
 
-        division_step = (config.viz_interval // config.batch_size)
         n_train = len(train_ds)
         n_val = len(val_ds)
 
         # (Initialize logging)
         if config.activate_wandb:
-            experiment = wandb.init(project=net.name, resume='allow',
-                                    entity="hotel-id-nns", reinit=True)
-            experiment.config.update(
+            wandb.init(project=net.name, resume='allow', entity="hotel-id-nns", reinit=True)
+            wandb.config.update(
                 dict(
-                 # TODO:
+                    # TODO:
                     # **dict(self.dataset_config),
                     # **dict(net.config),
                     **dict(config),
                     trainer_id=self.trainer_id,
                     training_size=n_train,
                     validation_size=n_val,
-                    evaluation_interval=division_step
-                )
-            )
+                ))
 
         logging.info(f'''Starting training:
             Training size:       {n_train}
             Validation size:     {n_val}
             Device:              {self.device.type}
             Trainer Config:
-                {config}'''
-        )
+                {config}''')
 
         if config.load_from_model and str(config.load_from_model).lower() != 'none':
             net.load_state_dict(load_model_weights(ROOT_DIR / config.load_from_model))
@@ -240,90 +217,55 @@ class Trainer:
         net.to(self.device)
 
         # create train and val data loader
-        loader_args = dict(
-            batch_size=config.batch_size,
-            pin_memory=True
-        )
-        train_loader = DataLoader(
-            train_ds,
-            shuffle=True,
-            num_workers=config.dataloader_num_workers,
-            **loader_args
-        )
-        val_loader = DataLoader(
-            val_ds,
-            shuffle=False,
-            num_workers=max(round(config.dataloader_num_workers * 0.5), 1),
-            **loader_args
-        )
+        loader_args = dict(batch_size=config.batch_size, pin_memory=True)
+        train_loader = DataLoader(train_ds,
+                                  shuffle=True,
+                                  num_workers=config.dataloader_num_workers,
+                                  **loader_args)
+        val_loader = DataLoader(val_ds,
+                                shuffle=False,
+                                num_workers=max(round(config.dataloader_num_workers * 0.5), 1),
+                                **loader_args)
 
         # Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
-        if config.optimizer_name == 'rmsprop':
-            optimizer = optim.RMSprop(
-                net.parameters(),
-                lr=config.learning_rate,
-                weight_decay=1e-8,
-                momentum=0.9
-            )
-        elif config.optimizer_name == 'adam':
-            optimizer = optim.Adam(
-                net.parameters(),
-                lr=config.learning_rate,
-                betas=(0.9, 0.999),
-                eps=1e-08,
-                weight_decay=0,
-                amsgrad=False
-            )
-        elif config.optimizer_name == 'amsgrad':
-            optimizer = optim.Adam(
-                net.parameters(),
-                lr=config.learning_rate,
-                betas=(0.9, 0.999),
-                eps=1e-08,
-                weight_decay=0,
-                amsgrad=False
-            )
-        elif config.optimizer_name == 'sgd':
-            optimizer = optim.SGD(
-                net.parameters(),
-                lr=config.learning_rate,
-            )
-        else:
-            RuntimeError(f"invalid optimizer name given {config.optimizer_name}")
+        optimizer = get_optimizer(net=net,
+                                  name=config.optimizer_name,
+                                  weight_decay=config.weight_decay,
+                                  learning_rate=config.learning_rate)
 
         # create learning rate reducer and gradient scaler to speedup convergency
-        lr_updates_per_epoch = max(n_train // config.val_interval, 1)
         lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             'min',
             #            threshold=1e-1,
             cooldown=3,
-            patience=config.lr_patience * lr_updates_per_epoch,
-            verbose=True
-        )
-        grad_scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
+            patience=config.lr_patience,
+            verbose=True)
+        # grad_scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
         global_step = 0
+        best_val_loss = torch.inf
 
         # Begin training
         for epoch in range(config.epochs):
-            net.train()
             epoch_loss = 0
             with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{config.epochs}', unit='img') as pbar:
-               iter_train_loder = iter(train_loader)
-               for i in range(len(train_loader)):
+                iter_train_loder = iter(train_loader)
+                net.train()
+
+                for i in range(len(train_loader)):
                     batch = next(iter_train_loder)
-                    optimizer.zero_grad(set_to_none=True)
+                    optimizer.zero_grad()
 
                     with torch.cuda.amp.autocast(enabled=config.amp):
-                        loss, info = self.infer(net, batch, loss_criterion)
+                        loss, _ = self.infer(net, batch, loss_criterion)
 
                     assert not torch.isnan(loss)
 
-                    grad_scaler.scale(loss).backward()
-                    grad_scaler.step(optimizer)
-                    grad_scaler.update()
-                    # loss.backward()
-                    # optimizer.step()
+                    # grad_scaler.scale(loss).backward()
+                    # grad_scaler.step(optimizer)
+                    # grad_scaler.update()
+                    loss.backward()
+                    optimizer.step()
 
                     pbar.update(config.batch_size)
                     global_step += 1
@@ -331,46 +273,45 @@ class Trainer:
 
                     # log infer to wandb
                     if config.activate_wandb:
-                        experiment.log({
+                        wandb.log({
                             'step': global_step * config.batch_size,
                             'epoch': epoch,
                             'train loss': loss.item(),
-                            **info,
                             'learning rate': optimizer.param_groups[0]['lr'],
                         })
 
                     pbar.set_postfix(**{'loss (batch)': loss.item()})
 
-                    # Visualization round (this will upload more detailed info to wandb, which is rather costly)
-                    if global_step % division_step == 0 and config.activate_wandb:
-                        logging.debug("visualization round")
-                        experiment_log = self.__evaluate_for_visualization(val_loader, net, loss_criterion)
-                        experiment_log['step'] = global_step * config.batch_size,
-                        experiment_log['epoch'] = epoch
-                        experiment.log(experiment_log)
+            net.eval()
 
-                    # validation round used to update learning rate
-                    if global_step % (n_train // (config.batch_size * lr_updates_per_epoch)) == 0:
-                        logging.debug("evaluation round")
-                        # validation round to adapt learning rate
-                        epoch_val_loss = self.evaluate(net, val_loader, loss_criterion)
-                        lr_scheduler.step(epoch_val_loss)
-                        logging.info(
-                            f"lr info: num_bad_epochs {lr_scheduler.num_bad_epochs}, patience {lr_scheduler.patience}, cooldown {lr_scheduler.cooldown_counter} best {lr_scheduler.best}")
-                        logging.info('Validation Loss: {}'.format(epoch_val_loss))
+            # validation round used to update learning rate
+            logging.debug("evaluation round")
+            # validation round to adapt learning rate
+            epoch_val_loss, info = self.evaluate(net, val_loader, loss_criterion)
+            lr_scheduler.step(epoch_val_loss)
 
-                        if config.activate_wandb:
-                            experiment.log({
-                                'step': global_step * config.batch_size,
-                                'epoch': epoch,
-                                'validation loss': epoch_val_loss,
-                                'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience
-                            })
+            logging.info(
+                f"lr info: num_bad_epochs {lr_scheduler.num_bad_epochs}, patience {lr_scheduler.patience}, cooldown {lr_scheduler.cooldown_counter} best {lr_scheduler.best}"
+            )
+            logging.info('Validation Loss: {}'.format(epoch_val_loss))
 
-            if config.save_checkpoint:
-                dir_checkpoint.mkdir(parents=True, exist_ok=True)
-                torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
-                logging.info(f'Checkpoint {epoch + 1} saved!')
+            if config.activate_wandb:
+                wandb.log({
+                    'step': global_step * config.batch_size,
+                    'epoch': epoch,
+                    **info, 'validation loss': epoch_val_loss,
+                    'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience
+                })
+
+            # save best epochs
+            if best_val_loss > epoch_val_loss:
+                best_val_loss = epoch_val_loss
+
+                # save checkpoint if val loss decreased
+                if config.save_checkpoint:
+                    dir_checkpoint.mkdir(parents=True, exist_ok=True)
+                    torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
+                    logging.info(f'Checkpoint {epoch + 1} saved!')
 
         if config.activate_wandb:
             wandb.finish()

@@ -1,8 +1,10 @@
 from pathlib import Path
+from re import S
 import time
 from typing import Iterable, Tuple
 import h5py
 import PIL
+from numpy import indices
 import pandas as pd
 import torch
 import torchvision.transforms as T
@@ -60,7 +62,7 @@ class H5ChainDataset(Dataset):
         img = torch.as_tensor(self.imgs[idx])
         chain_id = self.chain_ids[idx] - 1
 
-        chains = self.chain_ids[self.chain_id_non_zero]
+        # chains = self.chain_ids[self.chain_id_non_zero]
 
         img = self.preprocess(img)
 
