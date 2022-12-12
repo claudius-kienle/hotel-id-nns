@@ -13,6 +13,8 @@ def parse_args():
     parser.add_argument('output_dir', type=pathlib.Path, help='Directory where the output files should be generated')
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--class-name', type=str, default="chain", help="Select the type of label for the images")
+    parser.add_argument('--count-classes', action='store_true',
+                        help="Count the number of classes for the given class-name. Prevents splitting the dataset!")
 
     return parser.parse_args()
 
@@ -171,19 +173,21 @@ if __name__ == "__main__":
 
     dataset = HotelDataset.from_annotation_file(args.annotation_file)
 
+    if not args.count_classes:
+        # TODO: parameterize
+        train, set2 = dataset.split_images_by_ratio(0.95, class_name, seed=seed)
+        val, test = set2.split_images_by_ratio(2/3, class_name, seed=seed)
 
-    # TODO: parameterize
-    train, set2 = dataset.split_images_by_ratio(0.95, class_name, seed=seed)
-    val, test = set2.split_images_by_ratio(2/3, class_name, seed=seed)
+        train.shuffle_rows(seed)
+        train.save_annotations_to_file(output_dir, class_name, "train")
 
-    train.shuffle_rows(seed)
-    train.save_annotations_to_file(output_dir, class_name, "train")
+        val.shuffle_rows(seed)
+        val.save_annotations_to_file(output_dir, class_name, "val")
 
-    val.shuffle_rows(seed)
-    val.save_annotations_to_file(output_dir, class_name, "val")
+        test.shuffle_rows(seed)
+        test.save_annotations_to_file(output_dir, class_name, "test")
 
-    test.shuffle_rows(seed)
-    test.save_annotations_to_file(output_dir, class_name, "test")
-
-    dataset.save_classes_to_file(output_dir, class_name)
+        dataset.save_classes_to_file(output_dir, class_name)
+    else:
+        print("Number of classes (%s): %s" % (class_name, len(dataset.get_column(class_name))))
 

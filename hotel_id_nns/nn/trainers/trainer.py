@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import random
 import time
-from typing import Optional
+from typing import Optional, Union
 from joblib import cpu_count
 import numpy as np
 import torch
@@ -17,6 +17,8 @@ import wandb
 from tqdm import tqdm
 
 from hotel_id_nns.utils.pytorch import aggregate_metics, get_optimizer, load_model_weights
+from hotel_id_nns.nn.datasets.triplet_sampler import TripletSampler
+from hotel_id_nns.nn.datasets.triplet_hotel_dataset import TripletHotelDataset
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
@@ -216,11 +218,16 @@ class Trainer:
         # allot network to run on multiple gpus
         net.to(self.device)
 
+        if isinstance(train_ds, TripletHotelDataset):
+            train_args = dict(shuffle=False, sampler=TripletSampler(train_ds))
+        else:
+            train_args = dict(shuffle=True)
+
         # create train and val data loader
         loader_args = dict(batch_size=config.batch_size, pin_memory=True)
         train_loader = DataLoader(train_ds,
-                                  shuffle=True,
                                   num_workers=config.dataloader_num_workers,
+                                  **train_args,
                                   **loader_args)
         val_loader = DataLoader(val_ds,
                                 shuffle=False,

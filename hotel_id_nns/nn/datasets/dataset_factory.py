@@ -3,11 +3,11 @@ from typing import Dict, Union
 from torch.utils.data import Dataset
 from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
 from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
-
+from hotel_id_nns.nn.datasets.triplet_hotel_dataset import TripletHotelDataset
 
 class DatasetFactory(object):
 
-    def get(self, path: Path, config: Dict) -> Union[H5ChainDataset, HotelDataset]:
+    def get(self, path: Path, config: Dict) -> Union[H5ChainDataset, HotelDataset, TripletHotelDataset]:
         actual_path = path
 
         # A default-switch which changes to the slower csv dataset instead of the faster h5 because
@@ -19,6 +19,10 @@ class DatasetFactory(object):
         if actual_path.suffix == '.h5':
             return H5ChainDataset(annotations_file_path=actual_path, config=config)
         elif actual_path.suffix == '.csv':
-            return HotelDataset(annotations_file_path=actual_path, config=config)
+            if "triplet_sampling" in config and config["triplet_sampling"]:
+                return TripletHotelDataset(annotations_file_path=actual_path, config=config)
+            else:
+                return HotelDataset(annotations_file_path=actual_path, config=config)
+
         else:
             raise NotImplementedError()

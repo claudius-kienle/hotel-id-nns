@@ -1,0 +1,25 @@
+{
+    "trainer": {
+        "epochs": 200, 
+        "batch_size": 2,
+        "learning_rate": 5e-3,
+        "lr_patience": 15,
+        "save_checkpoint": false,
+        "amp": false,
+        "activate_wandb": false,
+        "optimizer_name": "sgd",
+        "load_from_model": "none",
+        "dataloader_num_workers": 1,
+        "loss_type": "CrossEntropy",
+        "weight_decay": 1e-2
+    },
+    "model_name": "ResNet50",
+    "model_output": "data/checkpoints",
+    "dataset": {
+        "training": "data/dataset/hotel_train_chain.csv",
+        "validation": "data/dataset/hotel_val_chain.csv",
+        "input_size": 512,
+        "num_chain_id_classes": 88,
+        "triplet_sampling": true
+    }
+}
