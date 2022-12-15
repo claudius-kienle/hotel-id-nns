@@ -107,3 +107,15 @@ wandb sweep --project ClassNet --entity hotel-id-nns data/configs/chain_id_sweep
         ```bash
         wandb agent hotel-id-nns/ClassNet/<<SWEEP-ID>>
         ```
+To discuss
+---
+- Regenerated csv files with new script. also includes hotel_id (only 7700 classes)
+- why not 2nd column in csv, since we currently don't do up-/down sampling?! 
+  - -> would allow extending current dataset loader classes with additional label, class_name parameter wouldn't be needed and joint training possible
+- Current Progress:
+  - MAP@5: 45 %
+  - use weight_decay to generalize, maybe pretrain on imagenet, preprocessing as in torchvision ResNet, ResNet50 looks like it works best?!
+- Next Steps:
+  - Christopher: Triplet Loss
+  - Johannes: 
+  - Claudius: Classification on hotel-id
