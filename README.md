@@ -79,3 +79,28 @@ Chain ID Prediction Roadmap
   - best hp are: ResNet50, WeightDecay 1e-2, lr 5e-3, sgd, rather short lr-patience
     - results in {'accuracy': 0.359375, 'precision': 0.4362400472164154, 'recall': 0.3991617262363434, 'f1': 0.39577633142471313}
 - traning one ResNet50 and one ResNet152 model with best hp: assumption that larger ResNet will generalize better
+
+Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
+---
+
+1. Initialize Sweep
+
+```bash
+wandb sweep --project ClassNet --entity hotel-id-nns data/configs/chain_id_sweep.yaml
+```
+
+2. Start Sweep Agents
+
+    1. BwUniCluster
+
+        Ensure the .sh file is set up correctly
+
+        ```bash
+            sbatch docs/slurm/train_sweep.sh
+        ```
+
+    2. CLI
+
+        ```bash
+        wandb agent hotel-id-nns/ClassNet/<<SWEEP-ID>>
+        ```

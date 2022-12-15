@@ -36,7 +36,7 @@ class ChainIDTrainer(Trainer):
         trainer_id: Optional[str] = None,
         device: Optional[torch.device] = None,
     ):
-        super().__init__(trainer_id, device)
+        super().__init__(project_name='ClassNet',trainer_id=trainer_id, device=device)
         self.verbose = False
 
     def infer(self,

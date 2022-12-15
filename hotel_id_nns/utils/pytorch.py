@@ -47,7 +47,6 @@ def aggregate_metics(metricsb: List[Dict]) -> Dict:
             reduced_metrics[key] = values.mean()
     return reduced_metrics
 
-
 def get_optimizer(net: nn.Module, name: str, weight_decay: float,
                   learning_rate: float) -> optim.Optimizer:
     if name == 'rmsprop':

@@ -9,7 +9,7 @@
 #SBATCH --output="data/logs/train_chain_id-%j.out"
 #SBATCH -J TrainChainID
 
-export EXECUTABLE="wandb agent hotel-id-nns/ClassNet/t5zhajey"
+export EXECUTABLE="wandb agent hotel-id-nns/ClassNet/tiigj472"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset
