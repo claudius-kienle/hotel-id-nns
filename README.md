@@ -79,6 +79,9 @@ Chain ID Prediction Roadmap
   - best hp are: ResNet50, WeightDecay 1e-2, lr 5e-3, sgd, rather short lr-patience
     - results in {'accuracy': 0.359375, 'precision': 0.4362400472164154, 'recall': 0.3991617262363434, 'f1': 0.39577633142471313}
 - traning one ResNet50 and one ResNet152 model with best hp: assumption that larger ResNet will generalize better
+- Did second sweep to check which model and if pretraining helps (on imagenet)
+  - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
+  - -> all non pretrained models performed badly, maybe lr to small
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
