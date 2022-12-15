@@ -21,3 +21,4 @@ dependencies:
   - pandas
   - matplotlib
   - pytables
+  - ipykernel
