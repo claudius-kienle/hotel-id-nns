@@ -31,7 +31,7 @@ class HotelDataset(Dataset):
         self.class_weights = torch.as_tensor(class_weights['weights'].values,  dtype=torch.float32)
 
         self.ds_path = annotations_file_path.parent / "train_images"
-        self.class_annotations = pd.read_csv(annotations_file_path, names=['path', class_name], sep=' ')
+        self.class_annotations = pd.read_csv(annotations_file_path, usecols=['path', class_name])
 
         preprocess_steps = []
         if size is not None:
