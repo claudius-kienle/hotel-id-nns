@@ -63,8 +63,8 @@ def main():
     train_ds_path = root_dir / "data/dataset/hotel_train_chain.csv"
     test_ds_path = root_dir / "data/dataset/hotel_test_chain.csv"
     val_ds_path = root_dir / "data/dataset/hotel_val_chain.csv"
-    to_hdf5(train_ds_path)
     to_hdf5(test_ds_path)
+    to_hdf5(train_ds_path)
     to_hdf5(val_ds_path)
 
 
