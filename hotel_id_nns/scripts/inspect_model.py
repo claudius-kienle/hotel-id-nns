@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
-from hotel_id_nns.utils.pytorch import compute_metrics, load_model_weights
+from hotel_id_nns.utils.pytorch import compute_classification_metrics, load_model_weights
 
 root_dir = Path(__file__).parent.parent.parent
 
@@ -37,7 +37,7 @@ def main(args):
         pred_chain_id = torch.argmax(pred_chain_id_probs, dim=-1)
         gt.append(chain_id)
         preds.append(pred_chain_id)
-        metrics = compute_metrics(pred_chain_id_probs, chain_id.squeeze())
+        metrics = compute_classification_metrics(pred_chain_id_probs, chain_id.squeeze())
         metricsb.append(metrics)
 
     gt = torch.concat(gt).squeeze()

@@ -37,7 +37,7 @@ class VAETrainer(Trainer):
     ):
         super().__init__(trainer_id, device)
 
-    def infer(self, net: VAE, batch, loss_criterion: VAELoss, detailed_info: bool = False) -> Tuple[torch.Tensor, Dict]:
+    def infer(self, net: VAE, batch, loss_criterion: VAELoss, compute_metrics: bool = False) -> Tuple[torch.Tensor, Dict]:
         input_img, chain_id = batch
 
         input_img = input_img.to(device=self.device)

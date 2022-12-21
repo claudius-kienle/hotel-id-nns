@@ -135,7 +135,7 @@ class Trainer:
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
 
     @abstractmethod
-    def infer(self, net, batch, loss_criterion, detailed_info: bool = False):
+    def infer(self, net, batch, loss_criterion, compute_metrics: bool = False):
         raise NotImplementedError()
 
     def evaluate(self, net: nn.Module, dataloader: DataLoader, loss_criterion):
@@ -147,7 +147,7 @@ class Trainer:
         loss = 0
         with torch.no_grad():
             for batch in tqdm(dataloader, desc='Validation round', unit='batch', leave=False):
-                batch_loss, info = self.infer(net, batch, loss_criterion)
+                batch_loss, info = self.infer(net, batch, loss_criterion, compute_metrics=True)
                 loss += batch_loss
                 infos.append(info)
 
@@ -271,7 +271,7 @@ class Trainer:
                     optimizer.zero_grad()
 
                     with torch.cuda.amp.autocast(enabled=config.amp):
-                        loss, _ = self.infer(net, batch, loss_criterion)
+                        loss, _ = self.infer(net, batch, loss_criterion, compute_metrics=False)
 
                     assert not torch.isnan(loss)
 
