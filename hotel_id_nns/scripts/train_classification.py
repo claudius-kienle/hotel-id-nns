@@ -6,11 +6,8 @@ from typing import Dict
 import torch
 from torch import nn
 import torchvision
-from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
-from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
-from hotel_id_nns.nn.modules.class_net import ClassNet
-from hotel_id_nns.nn.trainers.chain_id_trainer import ChainIDTrainer
+from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer, ClassificationType
 
 dir_path = Path(__file__).parent
 repo_path = dir_path.parent.parent
@@ -34,7 +31,6 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
         for param in model.parameters():
             param.requires_grad = False
 
-    model.name = "ClassNet"
     model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
 
     return model
@@ -49,18 +45,21 @@ def train_chain_id(config: Dict, data_path: Path):
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 
-    trainer_config = ChainIDTrainer.Config.from_config(config['trainer'])
+    trainer_config = ClassificationTrainer.Config.from_config(config['trainer'])
 
-    trainer = ChainIDTrainer()
+    classification_type = ClassificationType(config['classification_type'])
 
-    class_net = ClassNet(
-        in_size=ds_config['input_size'],
-        in_channels=3,
-        hidden_channels=[32, 64, 128, 256, 512],
-        num_classes=train_ds.num_classes
-    )
+    trainer = ClassificationTrainer(classification_type=classification_type)
 
-    class_net = get_model(config, num_classes = train_ds.num_chain_id_classes)
+    # determine how many classes we have
+    if classification_type == ClassificationType.chain_id:
+        num_classes = train_ds.num_chain_id_classes
+    elif classification_type == ClassificationType.hotel_id:
+        num_classes = train_ds.num_hotel_id_classes
+    else:
+        raise NotImplementedError()
+
+    class_net = get_model(config, num_classes=num_classes)
 
     trainer.train(
         net=class_net,

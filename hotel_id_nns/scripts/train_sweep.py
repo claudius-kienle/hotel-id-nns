@@ -7,7 +7,7 @@ from pathlib import Path
 
 import wandb
 
-from hotel_id_nns.scripts.train_chain_id import train_chain_id
+from hotel_id_nns.scripts.train_classification import train_chain_id
 
 
 dir_path = Path(__file__).parent

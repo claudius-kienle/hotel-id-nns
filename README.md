@@ -33,20 +33,26 @@ Setup Dataset
 ===
 
 1. Goto [kaggle](https://www.kaggle.com/competitions/hotel-id-2021-fgvc8/data) and download the dataset zip
-1. Extract it to dataset/hotel-id-2021-fgvc8. The directory structure should look like this:
+1. Extract it to data/dataset/hotel-id-2021-fgvc8. The directory structure should look like this:
     ```
-    dataset/
-    └──hotel-id-2021-fgvc8/
-       └──test_images/
-       └──train_images/
-       └──sample_submission.csv
-       └──train.csv
+    data/
+    └──dataset/
+        └──hotel-id-2021-fgvc8/
+        └──test_images/
+        └──train_images/
+        └──sample_submission.csv
+        └──train.csv
     ```
-1. Convert the dataset into a usable format using the python script tools/hotel_dataset_converter.py
-    ```bash
-    python tools/hotel_dataset_converter.py dataset/hotel-id-2021-fgvc8/train.csv dataset/ --seed 0
-    ```
-1. The generated train, val and test files contain rows in the format `image-path class-idx` where class-idx is the index of the class-label which are listed in `hotel_classes_` file.
+    **Note: all following scripts assume this file structure**
+
+
+2. Convert the dataset into a usable format using the jupyter notebook at [hotel_id_nns/tools/train_val_test_split.ipynb](hotel_id_nns/tools/train_val_test_split.ipynb). Just execute each cell.
+
+
+2. The generated train, val and test files (.csv) contain rows in the format `image-path,chain-idx,hotel-idx` where chain-idx is the index of the class-label which are listed in `chain_id_mapping.csv` file (Analog for the hotel-idx). 
+
+3. To speed up training, use [hotel_id_nns/tools/csv_to_h5_converter.py](hotel_id_nns/tools/csv_to_h5_converter.py) to generate .h5 files for each dataset with the newly generated .csv files. 
+
 
 Get started with training
 ===

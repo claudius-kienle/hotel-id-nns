@@ -187,7 +187,7 @@ class Trainer:
         loss_criterion,
     ):
         if config.save_checkpoint:
-            dir_checkpoint = checkpoint_dir / f"{net.name}" / self.trainer_id
+            dir_checkpoint = checkpoint_dir / self.project_name / self.trainer_id
             dir_checkpoint.mkdir(parents=True, exist_ok=True)
 
         n_train = len(train_ds)

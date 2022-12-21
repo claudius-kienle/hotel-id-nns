@@ -19,8 +19,6 @@ class ClassNet(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.name = name
-
         channels = copy.deepcopy(hidden_channels)
         channels.insert(0, in_channels)
 
