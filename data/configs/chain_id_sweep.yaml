@@ -5,28 +5,39 @@ metric:
   goal: minimize
   name: validation loss
 parameters:
-  optimizer_name:
-    values:
-      - sgd
-      - adam
-    distribution: categorical
+  # optimizer_name:
+  #   values:
+  #     - sgd
+  #     - adam
+  #   distribution: categorical
   learning_rate:
-    max: 0.02
+    max: 0.01
     min: 0.0001
     distribution: uniform
   weight_decay:
-    min: 0.0000001
+    min: 0.001
     max: 0.1
     distribution: uniform
   model_name:
     values:
       - ResNet18
+      - ResNet34
       - ResNet50
     distribution: categorical
-  lr_patience:
-    max: 20
-    min: 3
-    distribution: int_uniform
+  model_finetune:
+    values:
+      - true
+      - false
+    distribution: categorical
+  model_weights_imagenet:
+    values:
+      - true
+      - false
+    distribution: categorical
+  # lr_patience:
+  #   max: 10
+  #   min: 5
+  #   distribution: int_uniform
 command:
   - ${env}
   - ${interpreter}

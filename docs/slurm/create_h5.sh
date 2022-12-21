@@ -1,20 +1,16 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=privat@claudiuskienle.de
-#SBATCH --partition=gpu_4,gpu_8,gpu_4_a100
+#SBATCH --partition=single,dev_single
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
-#SBATCH --time=12:00:00
-#SBATCH --gres=gpu:1
-#SBATCH --output="data/logs/train_chain_id-%j.out"
-#SBATCH -J TrainChainID
+#SBATCH --time=00:30:00
+#SBATCH --output="data/logs/h5-%j.out"
+#SBATCH -J H5
 
-export EXECUTABLE="wandb agent hotel-id-nns/ClassNet/tiigj472"
+export EXECUTABLE="python hotel_id_nns/scripts/hdf5_dataset.py"
 
 source ~/.bashrc
-mkdir -p $TMP/data/dataset
-cp data/dataset/*.h5 $TMP/data/dataset
-cp data/dataset/*.csv $TMP/data/dataset
 conda activate hotel-id-nns
 
 startexe=${EXECUTABLE}

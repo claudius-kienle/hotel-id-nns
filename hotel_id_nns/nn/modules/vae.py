@@ -18,8 +18,6 @@ class VAE(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.name = name
-
         self.encoder = Encoder(in_size=in_size, in_channels=in_out_channels, hidden_channels=hidden_channels)
         self.__hidden_channels = hidden_channels
 

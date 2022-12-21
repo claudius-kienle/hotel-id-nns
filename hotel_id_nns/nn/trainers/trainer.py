@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import random
 import time
-from typing import Optional
+from typing import Optional, Union
 from joblib import cpu_count
 import numpy as np
 import torch
@@ -17,6 +17,8 @@ import wandb
 from tqdm import tqdm
 
 from hotel_id_nns.utils.pytorch import aggregate_metics, get_optimizer, load_model_weights
+from hotel_id_nns.nn.datasets.triplet_sampler import TripletSampler
+from hotel_id_nns.nn.datasets.triplet_hotel_dataset import TripletHotelDataset
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
@@ -118,10 +120,12 @@ class Trainer:
 
     def __init__(
         self,
+        project_name: str,  # name for wandb
         trainer_id: Optional[str] = None,
         device: Optional[torch.device] = None,
         # dataset_config: BasicDataset.Config
     ):
+        self.project_name = project_name
         if trainer_id is None:
             self.trainer_id = str(time.time())
         else:
@@ -154,8 +158,9 @@ class Trainer:
         histograms = {}
         for tag, value in net.named_parameters():
             tag = tag.replace('/', '.')
-            histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
-            histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
+            if value.grad is not None:  # if grad none, weights won't change
+                histograms['Weights/' + tag] = wandb.Histogram(value.data.cpu())
+                histograms['Gradients/' + tag] = wandb.Histogram(value.grad.data.cpu())
 
         info = {**infosb, **histograms}
 
@@ -182,14 +187,18 @@ class Trainer:
         loss_criterion,
     ):
         if config.save_checkpoint:
-            dir_checkpoint = checkpoint_dir / f"{net.name}" / self.trainer_id
+            dir_checkpoint = checkpoint_dir / self.project_name / self.trainer_id
+            dir_checkpoint.mkdir(parents=True, exist_ok=True)
 
         n_train = len(train_ds)
         n_val = len(val_ds)
 
         # (Initialize logging)
         if config.activate_wandb:
-            wandb.init(project=net.name, resume='allow', entity="hotel-id-nns", reinit=True)
+            wandb.init(project=self.project_name,
+                       resume='allow',
+                       entity="hotel-id-nns",
+                       reinit=True)
             wandb.config.update(
                 dict(
                     # TODO:
@@ -216,11 +225,16 @@ class Trainer:
         # allot network to run on multiple gpus
         net.to(self.device)
 
+        if isinstance(train_ds, TripletHotelDataset):
+            train_args = dict(shuffle=False, sampler=TripletSampler(train_ds))
+        else:
+            train_args = dict(shuffle=True)
+
         # create train and val data loader
         loader_args = dict(batch_size=config.batch_size, pin_memory=True)
         train_loader = DataLoader(train_ds,
-                                  shuffle=True,
                                   num_workers=config.dataloader_num_workers,
+                                  **train_args,
                                   **loader_args)
         val_loader = DataLoader(val_ds,
                                 shuffle=False,
@@ -299,8 +313,9 @@ class Trainer:
                 wandb.log({
                     'step': global_step * config.batch_size,
                     'epoch': epoch,
-                    **info, 'validation loss': epoch_val_loss,
-                    'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience
+                    **info,
+                    'validation loss': epoch_val_loss,
+                    'lr patience': lr_scheduler.num_bad_epochs / lr_scheduler.patience,
                 })
 
             # save best epochs
@@ -309,7 +324,6 @@ class Trainer:
 
                 # save checkpoint if val loss decreased
                 if config.save_checkpoint:
-                    dir_checkpoint.mkdir(parents=True, exist_ok=True)
                     torch.save(net.state_dict(), str(dir_checkpoint / f'e{epoch+1}.pth'))
                     logging.info(f'Checkpoint {epoch + 1} saved!')
 

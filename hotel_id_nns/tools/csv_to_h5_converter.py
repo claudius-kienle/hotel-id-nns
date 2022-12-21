@@ -12,7 +12,7 @@ root_dir = Path(__file__).parent.parent.parent
 
 
 def to_hdf5(ds_path):
-    ds = pd.read_csv(ds_path, names=['path', 'chain_id'], sep=' ')
+    ds = pd.read_csv(ds_path)
     img_dir = ds_path.parent / "train_images"
     hdf5_path = ds_path.parent / ("%s.h5" % ds_path.stem)
 
@@ -32,34 +32,39 @@ def to_hdf5(ds_path):
         train_ds_imgs = f.create_dataset('img', (len(ds.index), 3, crop_size, crop_size),
                                          dtype=np.uint8)
         train_ds_chain_ids = f.create_dataset('chain_id', (len(ds.index), ), dtype=np.int32)
+        train_ds_hotel_ids = f.create_dataset('hotel_id', (len(ds.index), ), dtype=np.int32)
 
         print('creating tensors...')
 
         def process(idx, train_img):
             chain_id = train_img.chain_id
+            hotel_id = train_img.hotel_id
             img_path = train_img.path
 
             img = preprocess(Image.open(img_dir / img_path))
 
-            return img, chain_id
+            return img, chain_id, hotel_id
 
         imgs_chain_ids = Parallel(n_jobs=-1)(
             delayed(process)(idx, train_img)
             for idx, train_img in tqdm(ds.iterrows(), desc='Conversion', total=len(ds.index)))
 
-        imgs= [c[0][None] for c in imgs_chain_ids]
-        chain_ids = [c[1] for c in imgs_chain_ids]
+        imgs, chain_ids, hotel_ids = zip(*imgs_chain_ids)
+        # imgs= [c[0][None] for c in imgs_chain_ids]
+        # chain_ids = [c[1] for c in imgs_chain_ids]
+        # hotel_ids = [c[2] for c in imgs_chain_ids]
 
-        train_ds_imgs[:] = torch.cat(imgs).numpy()
+        train_ds_imgs[:] = torch.stack(imgs, dim=0).numpy()
         train_ds_chain_ids[:] = torch.as_tensor(chain_ids).numpy()
+        train_ds_hotel_ids[:] = torch.as_tensor(hotel_ids).numpy()
 
 
 def main():
     train_ds_path = root_dir / "data/dataset/hotel_train_chain.csv"
     test_ds_path = root_dir / "data/dataset/hotel_test_chain.csv"
     val_ds_path = root_dir / "data/dataset/hotel_val_chain.csv"
-    to_hdf5(train_ds_path)
     to_hdf5(test_ds_path)
+    to_hdf5(train_ds_path)
     to_hdf5(val_ds_path)
 
 

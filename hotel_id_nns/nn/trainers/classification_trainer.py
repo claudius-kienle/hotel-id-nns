@@ -1,20 +1,25 @@
+from enum import Enum
 from itertools import chain
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 from matplotlib import pyplot as plt
 from torch import nn
 
 import torch
-import wandb
-from wandb.plot import confusion_matrix
-from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
+from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
+
+from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
+
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
 from hotel_id_nns.utils.pytorch import compute_metrics
 # from hotel_id_nns.utils.pytorch import get_accuracy
 
+class ClassificationType(str, Enum):
+    chain_id = 'chain-id'
+    hotel_id = 'hotel-id'
 
-class ChainIDTrainer(Trainer):
+class ClassificationTrainer(Trainer):
     class Config(Trainer.Config):
         def __init__(
             self,
@@ -27,14 +32,16 @@ class ChainIDTrainer(Trainer):
         @staticmethod
         def from_config(config: dict):
             parent_conf = Trainer.Config.from_config(config)
-            return ChainIDTrainer.Config(**dict(parent_conf), loss_type=config['loss_type'])
+            return ClassificationTrainer.Config(**dict(parent_conf), loss_type=config['loss_type'])
 
     def __init__(
         self,
+        classification_type: ClassificationType,
         trainer_id: Optional[str] = None,
         device: Optional[torch.device] = None,
     ):
-        super().__init__(trainer_id, device)
+        super().__init__(project_name=classification_type.name, trainer_id=trainer_id, device=device)
+        self.classification_type = classification_type
         self.verbose = False
 
     def infer(self,
@@ -55,48 +62,59 @@ class ChainIDTrainer(Trainer):
             loss: computed loss
             info: dict containing debug information to display in wandb
         """
-        input_img, chain_ids = batch
+        input_img, chain_ids, hotel_ids = batch
+        print(batch)
 
         input_img = input_img.to(device=self.device)
         chain_ids = torch.atleast_1d(chain_ids.to(device=self.device).squeeze())
+        hotel_ids = torch.atleast_1d(hotel_ids.to(device=self.device).squeeze())
 
-        pred_chain_id_probs = net(input_img)
+        pred_probs = net(input_img)
 
-        loss = loss_criterion(pred_chain_id_probs, chain_ids)  # type: torch.Tensor
-
-        metrics = compute_metrics(pred_chain_id_probs, chain_ids)
+        if self.classification_type == ClassificationType.chain_id:
+            loss = loss_criterion(pred_probs, chain_ids)  # type: torch.Tensor
+            print(chain_ids)
+            metrics = compute_metrics(pred_probs, chain_ids)
+        elif self.classification_type == ClassificationType.hotel_id:
+            loss = loss_criterion(pred_probs, hotel_ids)  # type: torch.Tensor
+            metrics = compute_metrics(pred_probs, hotel_ids)
+        else:
+            raise NotImplementedError()
 
         if self.verbose:
             ax = plt.subplot()
             plot_confusion_matrix(metrics['cm'], ax=ax)
             plt.savefig("cm.png")
 
-        info = {
-            'accuracy': metrics['accuracy'],
-            'precision': metrics['precision'],
-            'recall': metrics['recall'],
-            'f1': metrics['f1'],
-        }
 
-        if detailed_info:
-            info['cm'] = confusion_matrix(pred_chain_id_probs.cpu().detach().numpy(), chain_ids.cpu().detach().tolist(), class_names=list(map(str, range(pred_chain_id_probs.shape[1]))))
+        if not detailed_info:
+            metrics.pop('cm')
 
-        return loss, info
+        return loss, metrics
 
     def train(
         self,
         net: torch.nn.Module,
         config: Config,
-        train_ds: ChainDataset,
+        train_ds: Union[HotelDataset, H5ChainDataset],
         checkpoint_dir: Path,
-        val_ds: ChainDataset,
+        val_ds: Union[HotelDataset, H5ChainDataset],
     ):
         loss_type = config.loss_type
-        chain_id_weights = train_ds.chain_id_weights.to(self.device)
+
+        if hasattr(train_ds, 'class_weights'): # backward compatible
+            weights = train_ds.class_weights.to(self.device)
+        elif self.classification_type == ClassificationType.chain_id:
+            weights = train_ds.chain_id_weights.to(self.device)
+        elif self.classification_type == ClassificationType.hotel_id:
+            weights = train_ds.hotel_id_weights.to(self.device)
+        else:
+            raise NotImplementedError()
+
         if loss_type == 'NegativeLogLikelihood':
-            loss_criterion = torch.nn.NLLLoss(reduction='mean', weight=chain_id_weights)
+            loss_criterion = torch.nn.NLLLoss(reduction='mean', weight=weights)
         elif loss_type == 'CrossEntropy':
-            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean', weight=chain_id_weights)
+            loss_criterion = torch.nn.CrossEntropyLoss(reduction='mean', weight=weights)
         else:
             raise NotImplementedError()
 
