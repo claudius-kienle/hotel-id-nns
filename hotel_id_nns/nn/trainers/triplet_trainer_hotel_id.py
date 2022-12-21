@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 from torch import nn
 
 import torch
@@ -40,15 +40,15 @@ class ChainIDTrainer(Trainer):
         super().__init__(trainer_id, device)
         self.verbose = False
 
-    def infer(self, net: nn.Module, batch, loss_criterion, detailed_info: bool = False) -> Tuple[
-        torch.Tensor, torch.Tensor]:
+    def infer(self, net: nn.Module, batch, loss_criterion, compute_metrics: bool = False) -> Tuple[
+        torch.Tensor, Optional[Dict]]:
         """infers the classification net and computes the loss with the predicted class probs and the true class label
 
         Arguments:
             net: classification network that outputs probabilities given a batch of images
             batch: batch of inputs and chain id labels
             loss_criterion: loss function to compute loss with
-            detailed_into: flag if returning object info should contain detailed information (will be true on evaluation round)
+            compute_metrics: flag if returning tuple should compute metrics (default False)
 
 
         Returns
@@ -79,15 +79,16 @@ class ChainIDTrainer(Trainer):
         recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
         f1 = 2 * precision * recall / (precision + recall + 1e-15)
 
-        info = {
-            'accuracy': accuracy,
-            'precision': precision.mean(),
-            'recall': recall.mean(),
-            'f1': f1.mean(),
-        }
-
-        if detailed_info:
-            info['input'] = wandb.Image(input_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+        if compute_metrics:
+            info = {
+                'accuracy': accuracy,
+                'precision': precision.mean(),
+                'recall': recall.mean(),
+                'f1': f1.mean(),
+            'input': wandb.Image(input_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+            }
+        else:
+            info = None
 
         return loss, info
 

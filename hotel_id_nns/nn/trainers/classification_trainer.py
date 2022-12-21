@@ -12,7 +12,7 @@ from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
 
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
-from hotel_id_nns.utils.pytorch import compute_metrics
+from hotel_id_nns.utils.pytorch import compute_classification_metrics 
 # from hotel_id_nns.utils.pytorch import get_accuracy
 
 class ClassificationType(str, Enum):
@@ -40,7 +40,7 @@ class ClassificationTrainer(Trainer):
         trainer_id: Optional[str] = None,
         device: Optional[torch.device] = None,
     ):
-        super().__init__(project_name=classification_type.name, trainer_id=trainer_id, device=device)
+        super().__init__(project_name=classification_type.value, trainer_id=trainer_id, device=device)
         self.classification_type = classification_type
         self.verbose = False
 
@@ -48,7 +48,7 @@ class ClassificationTrainer(Trainer):
               net: nn.Module,
               batch,
               loss_criterion,
-              detailed_info: bool = False) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+              compute_metrics: bool = False) -> Tuple[torch.Tensor, Optional[Dict[str, torch.Tensor]]]:
         """infers the classification net and computes the loss with the predicted class probs and the true class label
 
         Arguments:
@@ -69,24 +69,23 @@ class ClassificationTrainer(Trainer):
         hotel_ids = torch.atleast_1d(hotel_ids.to(device=self.device).squeeze())
 
         pred_probs = net(input_img)
+        metrics = None
 
         if self.classification_type == ClassificationType.chain_id:
             loss = loss_criterion(pred_probs, chain_ids)  # type: torch.Tensor
-            metrics = compute_metrics(pred_probs, chain_ids)
+            if compute_metrics:
+                metrics = compute_classification_metrics(pred_probs, chain_ids)
         elif self.classification_type == ClassificationType.hotel_id:
             loss = loss_criterion(pred_probs, hotel_ids)  # type: torch.Tensor
-            metrics = compute_metrics(pred_probs, hotel_ids)
+            if compute_metrics:
+                metrics = compute_classification_metrics(pred_probs, hotel_ids)
         else:
             raise NotImplementedError()
 
-        if self.verbose:
+        if self.verbose and metrics is not None:
             ax = plt.subplot()
             plot_confusion_matrix(metrics['cm'], ax=ax)
             plt.savefig("cm.png")
-
-
-        if not detailed_info:
-            metrics.pop('cm')
 
         return loss, metrics
 

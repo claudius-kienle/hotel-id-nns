@@ -31,7 +31,7 @@ def compute_map(probs, gt, k):
     mAP = torch.mean(avg_precision)
     return mAP
 
-def compute_metrics(pred_chain_id_probs: torch.Tensor, chain_ids: torch.Tensor):
+def compute_classification_metrics(pred_chain_id_probs: torch.Tensor, chain_ids: torch.Tensor):
     """compute useful classification metrics
 
     :param pred_chain_id_probs: probabilities (shape: [batch_size, num_classes])
