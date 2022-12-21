@@ -14,17 +14,30 @@ def load_model_weights(path: Path):
     return weights
 
 def compute_map(probs, gt, k):
+    """compute mean-Average Precision @ k
+
+    :param probs: tensor with prediction probabilities for each class (shape: [batch_size, num_classes])
+    :param gt: ground truth tensor (shape: [batch_size, num_classes])
+    :param k: mean average precision parameter
+    :return: scalar value representing the mean-Average Precision @ k
+    """
     batch_size = len(probs)
     most_likely_classes = torch.sort(probs, descending=True)[1]
     hit_map = most_likely_classes[:, :k] == gt[:, None]
     rank = torch.nonzero(hit_map)
-    avg_precision = torch.zeros((batch_size,))
+    avg_precision = torch.zeros((batch_size,), device=rank.device)
     avg_precision[rank[:, 0]] = 1 / (rank[:, 1] + 1)
 
     mAP = torch.mean(avg_precision)
     return mAP
 
 def compute_metrics(pred_chain_id_probs: torch.Tensor, chain_ids: torch.Tensor):
+    """compute useful classification metrics
+
+    :param pred_chain_id_probs: probabilities (shape: [batch_size, num_classes])
+    :param chain_ids: labels (shape: [batch_size])
+    :return: dictionary with metrics
+    """
     chain_ids = torch.atleast_1d(chain_ids)
     batch_size = len(pred_chain_id_probs)
     num_classes = pred_chain_id_probs.shape[-1]

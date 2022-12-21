@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from torch import nn
 
 import torch
-from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
+from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 
 from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
 
@@ -63,7 +63,6 @@ class ClassificationTrainer(Trainer):
             info: dict containing debug information to display in wandb
         """
         input_img, chain_ids, hotel_ids = batch
-        print(batch)
 
         input_img = input_img.to(device=self.device)
         chain_ids = torch.atleast_1d(chain_ids.to(device=self.device).squeeze())
@@ -73,7 +72,6 @@ class ClassificationTrainer(Trainer):
 
         if self.classification_type == ClassificationType.chain_id:
             loss = loss_criterion(pred_probs, chain_ids)  # type: torch.Tensor
-            print(chain_ids)
             metrics = compute_metrics(pred_probs, chain_ids)
         elif self.classification_type == ClassificationType.hotel_id:
             loss = loss_criterion(pred_probs, hotel_ids)  # type: torch.Tensor
@@ -96,9 +94,9 @@ class ClassificationTrainer(Trainer):
         self,
         net: torch.nn.Module,
         config: Config,
-        train_ds: Union[HotelDataset, H5ChainDataset],
+        train_ds: Union[HotelDataset, H5HotelDataset],
         checkpoint_dir: Path,
-        val_ds: Union[HotelDataset, H5ChainDataset],
+        val_ds: Union[HotelDataset, H5HotelDataset],
     ):
         loss_type = config.loss_type
 

@@ -5,7 +5,7 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from hotel_id_nns.nn.datasets.chain_dataset_h5 import H5ChainDataset
+from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
 from hotel_id_nns.utils.pytorch import compute_metrics, load_model_weights
 
@@ -15,7 +15,7 @@ def main(args):
     config = {
         "num_chain_id_classes": 87
     }
-    ds = H5ChainDataset(annotations_file_path=root_dir / args.dataset_path, config=config)
+    ds = H5HotelDataset(annotations_file_path=root_dir / args.dataset_path, config=config)
 
     class_net =  torchvision.models.resnet50() # ,num_classes=
     class_net.fc = torch.nn.Linear(class_net.fc.in_features, config['num_chain_id_classes'])

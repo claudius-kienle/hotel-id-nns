@@ -62,12 +62,21 @@ The loss functions used during training require weights for each class, since th
 One can look at the .json configs in data/config\_files for inspiration how training works.
 
 The training can be executed with 
-```bash
-python hotel_id_nns/scripts/train_chain_id.py data/configs/train_chain_id_ce.json
-```
+
+1. To train chain-id prediction network
+
+    ```bash
+    python hotel_id_nns/scripts/train_classification.py data/configs/train_chain_id.json
+    ```
+
+2. To train hotel-id prediction network
+
+    ```bash
+    python hotel_id_nns/scripts/train_classification.py data/configs/train_hotel_id.json
+    ```
 
 The optional parameter `--data-path` can be used to specify where the dataset files and folders are stored at.
-If not given, the script asumes that the files are located under data/dataset.
+If not given, the script assumes that the files are located under data/dataset.
 
 Chain ID Prediction Roadmap
 ------------------------
@@ -113,15 +122,3 @@ wandb sweep --project ClassNet --entity hotel-id-nns data/configs/chain_id_sweep
         ```bash
         wandb agent hotel-id-nns/ClassNet/<<SWEEP-ID>>
         ```
-To discuss
----
-- Regenerated csv files with new script. also includes hotel_id (only 7700 classes)
-- why not 2nd column in csv, since we currently don't do up-/down sampling?! 
-  - -> would allow extending current dataset loader classes with additional label, class_name parameter wouldn't be needed and joint training possible
-- Current Progress:
-  - MAP@5: 45 %
-  - use weight_decay to generalize, maybe pretrain on imagenet, preprocessing as in torchvision ResNet, ResNet50 looks like it works best?!
-- Next Steps:
-  - Christopher: Triplet Loss
-  - Johannes: 
-  - Claudius: Classification on hotel-id
