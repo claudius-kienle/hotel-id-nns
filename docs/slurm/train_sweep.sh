@@ -9,11 +9,13 @@
 #SBATCH --output="data/logs/train_chain_id-%j.out"
 #SBATCH -J TrainChainID
 
-export EXECUTABLE="python hotel_id_nns/scripts/train_chain_id.py data/configs/train_chain_id_ce.json --data-path ${TMP}"
+export EXECUTABLE="wandb agent hotel-id-nns/ClassNet/tiigj472"
 
+source ~/.bashrc
 mkdir -p $TMP/data/dataset
 cp data/dataset/*.h5 $TMP/data/dataset
 cp data/dataset/*.csv $TMP/data/dataset
+conda activate hotel-id-nns
 
 startexe=${EXECUTABLE}
 echo "Executable ${EXECUTABLE} running on ${SLURM_JOB_CPUS_PER_NODE} cores with ${OMP_NUM_THREADS} threads"

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 from torch import nn
 
 import torch
@@ -8,17 +8,18 @@ import wandb
 from hotel_id_nns.nn.datasets.chain_dataset import ChainDataset
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
+
+
 # from hotel_id_nns.utils.pytorch import get_accuracy
 
 
 class ChainIDTrainer(Trainer):
-
     class Config(Trainer.Config):
 
         def __init__(
-            self,
-            loss_type: str,
-            **kwargs,
+                self,
+                loss_type: str,
+                **kwargs,
         ):
             super().__init__(**kwargs)
             self.loss_type = loss_type
@@ -30,24 +31,24 @@ class ChainIDTrainer(Trainer):
                 **dict(parent_conf),
                 loss_type=config['loss_type']
             )
-        
 
     def __init__(
-        self,
-        trainer_id: Optional[str] = None,
-        device: Optional[torch.device] = None,
+            self,
+            trainer_id: Optional[str] = None,
+            device: Optional[torch.device] = None,
     ):
         super().__init__(trainer_id, device)
         self.verbose = False
 
-    def infer(self, net: nn.Module, batch, loss_criterion, detailed_info: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+    def infer(self, net: nn.Module, batch, loss_criterion, compute_metrics: bool = False) -> Tuple[
+        torch.Tensor, Optional[Dict]]:
         """infers the classification net and computes the loss with the predicted class probs and the true class label
 
         Arguments:
             net: classification network that outputs probabilities given a batch of images
             batch: batch of inputs and chain id labels
             loss_criterion: loss function to compute loss with
-            detailed_into: flag if returning object info should contain detailed information (will be true on evaluation round)
+            compute_metrics: flag if returning tuple should compute metrics (default False)
 
 
         Returns
@@ -69,7 +70,7 @@ class ChainIDTrainer(Trainer):
 
         indices = num_classes * chain_id + pred_chain_id
         cm = torch.bincount(indices, minlength=num_classes ** 2).reshape((num_classes, num_classes))
-        
+
         if self.verbose:
             plot_confusion_matrix(cm)
 
@@ -78,25 +79,26 @@ class ChainIDTrainer(Trainer):
         recall = cm.diag() / (cm.sum(dim=1) + 1e-15)
         f1 = 2 * precision * recall / (precision + recall + 1e-15)
 
-        info = {
-            'accuracy': accuracy,
-            'precision':precision.mean(), 
-            'recall': recall.mean(),
-            'f1': f1.mean(),
-        }
-
-        if detailed_info:
-            info['input'] = wandb.Image(input_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+        if compute_metrics:
+            info = {
+                'accuracy': accuracy,
+                'precision': precision.mean(),
+                'recall': recall.mean(),
+                'f1': f1.mean(),
+            'input': wandb.Image(input_img.cpu().detach().squeeze().numpy().transpose((1, 2, 0)))
+            }
+        else:
+            info = None
 
         return loss, info
 
     def train(
-        self,
-        net: torch.nn.Module,
-        config: Config,
-        train_ds: ChainDataset,
-        checkpoint_dir: Path,
-        val_ds: ChainDataset,
+            self,
+            net: torch.nn.Module,
+            config: Config,
+            train_ds: ChainDataset,
+            checkpoint_dir: Path,
+            val_ds: ChainDataset,
     ):
         loss_type = config.loss_type
         chain_id_weights = train_ds.chain_id_weights.to(self.device)

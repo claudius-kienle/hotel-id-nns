@@ -13,7 +13,7 @@
         "loss_type": "CrossEntropy",
         "weight_decay": 0.02
     },
-    "classification_type": "chain-id", 
+    "classification_type": "hotel-id", 
     "model_name": "ResNet50",
     "model_weights_imagenet": true,
     "model_finetune": false,
@@ -21,7 +21,7 @@
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
         "validation": "data/dataset/hotel_val_chain.h5",
-        "remove_unkown_chain_id_samples": true,
+        "remove_unkown_chain_id_samples": false,
         "input_size": 512
     }
 }

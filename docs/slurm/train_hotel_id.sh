@@ -9,7 +9,7 @@
 #SBATCH --output="data/logs/train_chain_id-%j.out"
 #SBATCH -J TrainChainID
 
-export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_chain_id.json --data-path ${TMP}"
+export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_hotel_id.json --data-path ${TMP}"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset
