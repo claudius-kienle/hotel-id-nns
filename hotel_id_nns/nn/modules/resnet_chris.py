@@ -40,12 +40,14 @@ class ResNetBlock(nn.Module):
                 out_channels=block_out_channels,
                 stride=2
             )
-        else:
+        elif in_channels != block_out_channels:
             self.conv_1x1 = nn.Conv2d(
                 kernel_size=1,
                 in_channels=in_channels,
                 out_channels=block_out_channels,
             )
+        else:
+            self.conv_1x1 = None
 
     def forward(self, x):
         y = x
@@ -58,7 +60,8 @@ class ResNetBlock(nn.Module):
 
         y = getattr(self, f"relu_{self.depth - 1}")(y)
 
-        x = self.conv_1x1(x)
+        if self.conv_1x1 is not None:
+            x = self.conv_1x1(x)
 
         return y + x
 
