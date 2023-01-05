@@ -41,7 +41,11 @@ class ResNetBlock(nn.Module):
                 stride=2
             )
         else:
-            self.conv_1x1 = None
+            self.conv_1x1 = nn.Conv2d(
+                kernel_size=1,
+                in_channels=in_channels,
+                out_channels=block_out_channels,
+            )
 
     def forward(self, x):
         y = x
@@ -54,8 +58,7 @@ class ResNetBlock(nn.Module):
 
         y = getattr(self, f"relu_{self.depth - 1}")(y)
 
-        if self.sample_down:
-            x = self.conv_1x1(x)
+        x = self.conv_1x1(x)
 
         return y + x
 
@@ -112,7 +115,8 @@ resnet18_cfg = dict(
         dict(builder=build_resnet_block, args=dict(in_channels=64, kernel_channel_list=[(3, 64), (3, 64)])),
     ]),
     conv3_x=dict(builder=build_sequential, args=[
-        dict(builder=build_resnet_block, args=dict(in_channels=64, kernel_channel_list=[(3, 128), (3, 128)], sample_down=True)),
+        dict(builder=build_resnet_block,
+             args=dict(in_channels=64, kernel_channel_list=[(3, 128), (3, 128)], sample_down=True)),
         dict(builder=build_resnet_block, args=dict(in_channels=128, kernel_channel_list=[(3, 128), (3, 128)])),
     ]),
     conv4_x=dict(builder=build_sequential, args=[
@@ -126,6 +130,55 @@ resnet18_cfg = dict(
     global_average_pooling=dict(builder=build_global_average_pooling),
 
     out_features=512
+)
+_resnet50_conv3_1 = [
+    dict(builder=build_resnet_block,
+         args=dict(in_channels=256, kernel_channel_list=[(1, 128), (3, 128), (1, 512)], sample_down=True))
+]
+_resnet50_conv3_234 = [
+    dict(builder=build_resnet_block,
+         args=dict(in_channels=512,
+                   kernel_channel_list=[(1, 128), (3, 128), (1, 512)],
+                   sample_down=False))
+    for _ in range(3)
+]
+_resnet50_conv3_x = _resnet50_conv3_1 + _resnet50_conv3_234
+
+_resnet50_conv4_1 = [
+    dict(builder=build_resnet_block,
+         args=dict(in_channels=512, kernel_channel_list=[(1, 256), (3, 256), (1, 1024)], sample_down=True))
+]
+_resnet50_conv4_23456 = [
+    dict(builder=build_resnet_block,
+         args=dict(in_channels=1024, kernel_channel_list=[(1, 256), (3, 256), (1, 1024)], sample_down=False))
+    for _ in range(5)
+]
+_resnet50_conv4_x = _resnet50_conv4_1 + _resnet50_conv4_23456
+
+resnet50_cfg = dict(
+    conv1=dict(builder=build_conv2d,
+               args=dict(in_channels=3, out_channels=64, stride=2, kernel_size=7)),
+    conv2_x=dict(builder=build_sequential, args=[
+        dict(builder=build_max_pool, args=dict(kernel_size=3, stride=2)),
+        dict(builder=build_resnet_block, args=dict(in_channels=64, kernel_channel_list=[(1, 64), (3, 64), (1, 256)])),
+        dict(builder=build_resnet_block, args=dict(in_channels=256, kernel_channel_list=[(1, 64), (3, 64), (1, 256)])),
+        dict(builder=build_resnet_block, args=dict(in_channels=256, kernel_channel_list=[(1, 64), (3, 64), (1, 256)])),
+    ]),
+    conv3_x=dict(builder=build_sequential, args=_resnet50_conv3_x),
+    conv4_x=dict(builder=build_sequential, args=_resnet50_conv4_x),
+    conv5_x=dict(builder=build_sequential, args=[
+        dict(builder=build_resnet_block,
+             args=dict(in_channels=1024, kernel_channel_list=[(1, 512), (3, 512), (1, 2048)], sample_down=True)),
+        dict(builder=build_resnet_block,
+             args=dict(in_channels=2048, kernel_channel_list=[(1, 512), (3, 512), (1, 2048)])),
+        dict(builder=build_resnet_block,
+             args=dict(in_channels=2048, kernel_channel_list=[(1, 512), (3, 512), (1, 2048)])),
+        dict(builder=build_resnet_block,
+             args=dict(in_channels=2048, kernel_channel_list=[(1, 512), (3, 512), (1, 2048)])),
+    ]),
+    global_average_pooling=dict(builder=build_global_average_pooling),
+
+    out_features=2048
 )
 
 
@@ -165,7 +218,7 @@ class ResNet(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    net = ResNet(resnet18_cfg, 1000)
+    net = ResNet(resnet50_cfg, 1000)
 
     x = torch.zeros((2, 3, 224, 224))
     y = net(x)
