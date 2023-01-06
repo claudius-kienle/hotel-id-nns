@@ -102,7 +102,7 @@ Best Run on TorchVision (pretrained):   fanciful-sweep-35
 Best Run on Our Model (not pretrained): 
     - ResNet 18 (Chr): skilled-energy-190: Overfits
     - ResNet 18 (J): legendary-rain-192
-    - ResNet 50 (J): pending... wild-sponge-191
+    - ResNet 50 (J): drawn-moon-193
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
