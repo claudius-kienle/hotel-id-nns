@@ -1,0 +1,5 @@
+outs:
+- md5: 41ab621289af8c83ea393e95e1ba5444.dir
+  size: 95068389
+  nfiles: 1
+  path: image-net
