@@ -77,10 +77,11 @@ def build_conv2d(in_channels, out_channels, stride, kernel_size):
                      padding=kernel_size // 2)
 
 def build_sequential(args: List[dict]):
-    seq = nn.Sequential()
-    for cfg in args:
-        seq.append(cfg["builder"](**cfg["args"]))
-    return seq
+    modules = [
+        cfg["builder"](**cfg["args"])
+        for cfg in args
+    ]
+    return nn.Sequential(*modules)
 
 
 def build_max_pool(kernel_size, stride):
@@ -195,7 +196,6 @@ class ResNet(torch.nn.Module):
         resnet_out = network_cfg["out_features"]
 
         self.fully_connected = nn.Linear(in_features=resnet_out, out_features=out_features)
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -205,7 +205,6 @@ class ResNet(torch.nn.Module):
         x = self.conv5_x(x)
         x = self.global_average_pooling(x)
         x = self.fully_connected(x)
-        x = self.softmax(x)
         return x
 
 

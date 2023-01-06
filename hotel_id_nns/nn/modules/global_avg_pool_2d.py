@@ -9,6 +9,6 @@ class GlobalAvgPool2d(nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         assert len(input.shape) >= 3
 
-        output = torch.mean(input, dim=(-1, -2), keepdim=True)
+        output = torch.mean(input, dim=(-1, -2))
 
         return output
