@@ -3,10 +3,15 @@ from typing import List, Tuple
 
 import torch
 import torch.nn as nn
+from hotel_id_nns.nn.modules.conv_layer import ConvLayer
+
+from hotel_id_nns.nn.modules.global_avg_pool_2d import GlobalAvgPool2d
 
 
 class ResNetBlock(nn.Module):
-    def __init__(self, in_channels: int, kernel_channel_list: List[Tuple[int, int]], sample_down: bool):
+
+    def __init__(self, in_channels: int, kernel_channel_list: List[Tuple[int, int]],
+                 sample_down: bool):
         super().__init__()
 
         self.depth = len(kernel_channel_list)
@@ -15,17 +20,15 @@ class ResNetBlock(nn.Module):
         c_in = in_channels
         for idx, (kernel_size, c_out) in enumerate(kernel_channel_list):
             stride = 2 if idx == 0 and sample_down else 1
-            self.add_module(f"conv_{idx}", nn.Conv2d(
-                kernel_size=kernel_size,
-                in_channels=c_in,
-                out_channels=c_out,
-                stride=stride,
-                padding=kernel_size // 2
-            ))
+            self.add_module(
+                f"conv_{idx}",
+                nn.Conv2d(kernel_size=kernel_size,
+                          in_channels=c_in,
+                          out_channels=c_out,
+                          stride=stride,
+                          padding=kernel_size // 2))
 
-            self.add_module(f"batch_norm_{idx}", nn.BatchNorm2d(
-                num_features=c_out
-            ))
+            self.add_module(f"batch_norm_{idx}", nn.BatchNorm2d(num_features=c_out))
 
             self.add_module(f"relu_{idx}", nn.ReLU())
 
@@ -66,29 +69,12 @@ class ResNetBlock(nn.Module):
         return y + x
 
 
-class GlobalAveragePooling(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        # x has shape (batch-size, num_channels, w, h)
-        # out-shape (batch-size, num_channels) by taking the average for each channel
-        flat_x = x.view(x.shape[0], x.shape[1], x.shape[2] * x.shape[3])
-        return torch.mean(flat_x, dim=2)
-
-
 def build_conv2d(in_channels, out_channels, stride, kernel_size):
-    return torch.nn.Sequential(
-        nn.Conv2d(in_channels=in_channels,
-                  out_channels=out_channels,
-                  stride=stride,
-                  kernel_size=kernel_size,
-                  padding=kernel_size // 2,
-                  ),
-        nn.BatchNorm2d(num_features=out_channels),
-        nn.ReLU()
-    )
-
+    return ConvLayer(in_channels=in_channels,
+                     out_channels=out_channels,
+                     stride=stride,
+                     kernel_size=kernel_size,
+                     padding=kernel_size // 2)
 
 def build_sequential(args: List[dict]):
     seq = nn.Sequential()
@@ -101,12 +87,14 @@ def build_max_pool(kernel_size, stride):
     return nn.MaxPool2d(kernel_size=kernel_size, stride=stride, padding=kernel_size // 2)
 
 
-def build_resnet_block(in_channels: int, kernel_channel_list: List[Tuple[int, int]], sample_down: bool = False):
+def build_resnet_block(in_channels: int,
+                       kernel_channel_list: List[Tuple[int, int]],
+                       sample_down: bool = False):
     return ResNetBlock(in_channels, kernel_channel_list, sample_down)
 
 
 def build_global_average_pooling():
-    return GlobalAveragePooling()
+    return GlobalAvgPool2d()
 
 
 resnet18_cfg = dict(
@@ -186,6 +174,7 @@ resnet50_cfg = dict(
 
 
 class ResNet(torch.nn.Module):
+
     def __init__(self, network_cfg: dict, out_features):
         # How to init weights?
         super().__init__()
