@@ -110,7 +110,7 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = x.reshape(x.shape[0], -1)
         x = self.fc(x)
-        x = self.softmax(x)
+        # x = self.softmax(x)
         return x
 
     # method to create conv2, conv3, conv4 and conv5
