@@ -62,6 +62,7 @@ class Trainer:
             learning_rate: float,
             weight_decay: float,
             lr_patience: int,
+            lr_cooldown: int,
             save_checkpoint: bool,
             amp: bool,
             activate_wandb: bool,
@@ -74,6 +75,7 @@ class Trainer:
             self.learning_rate = learning_rate
             self.weight_decay = weight_decay
             self.lr_patience = lr_patience
+            self.lr_cooldown = lr_cooldown
             self.save_checkpoint = save_checkpoint
             self.amp = amp
             self.activate_wandb = activate_wandb
@@ -89,6 +91,7 @@ class Trainer:
                 learning_rate=config['learning_rate'],
                 weight_decay=config['weight_decay'],
                 lr_patience=config['lr_patience'],
+                lr_cooldown=config['lr_cooldown'],
                 save_checkpoint=config['save_checkpoint'],
                 amp=config['amp'],
                 activate_wandb=config['activate_wandb'],
@@ -110,6 +113,7 @@ class Trainer:
                 Learning Rate:          {self.learning_rate}
                 Weight Decay:           {self.weight_decay}
                 LR Patiance:            {self.lr_patience}
+                LR Cooldown:            {self.lr_cooldown}
                 Save Checkpoints:       {self.save_checkpoint}
                 AMP:                    {self.amp}
                 WandB:                  {self.activate_wandb}
@@ -252,7 +256,7 @@ class Trainer:
             optimizer,
             'min',
             #            threshold=1e-1,
-            cooldown=3,
+            cooldown=config.lr_cooldown,
             patience=config.lr_patience,
             verbose=True)
         # grad_scaler = torch.cuda.amp.GradScaler(enabled=config.amp)
