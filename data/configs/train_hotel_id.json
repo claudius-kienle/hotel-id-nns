@@ -1,9 +1,10 @@
 {
     "trainer": {
         "epochs": 400, 
-        "batch_size": 32,
-        "learning_rate": 0.1,
-        "lr_patience": 7,
+        "batch_size": 128, 
+        "learning_rate": 0.0035,
+        "lr_patience": 10,
+        "lr_cooldown": 30,
         "save_checkpoint": true,
         "amp": false,
         "activate_wandb": true,
@@ -11,10 +12,11 @@
         "load_from_model": "none",
         "dataloader_num_workers": 10,
         "loss_type": "CrossEntropy",
-        "weight_decay": 0.02
+        "weight_decay": 0.00,
+        "weight_decay-old": 0.02
     },
     "classification_type": "hotel-id", 
-    "model_name": "ResNet101",
+    "model_name": "ResNet18",
     "model_weights_imagenet": true,
     "model_finetune": false,
     "model_output": "data/checkpoints",
