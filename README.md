@@ -100,8 +100,9 @@ Chain ID Prediction Roadmap
 
 Best Run on TorchVision (pretrained):   fanciful-sweep-35
 Best Run on Our Model (not pretrained): 
-    - ResNet 18 (Chr): kind-silence-186
-    - ResNet 50 (J): wild-sponge-191
+    - ResNet 18 (Chr): skilled-energy-190: Overfits
+    - ResNet 18 (J): legendary-rain-192
+    - ResNet 50 (J): pending... wild-sponge-191
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---

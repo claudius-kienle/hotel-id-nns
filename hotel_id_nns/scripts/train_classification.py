@@ -19,7 +19,8 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
     use_weights = config['model_weights_imagenet']
     if model_name == 'ResNet18':
         model = ResNet(network_cfg=resnet18_cfg, out_features=num_classes)
-        # weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if use_weights else None
+        weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if use_weights else None
+        model.load_state_dict(weights)
         # model = torchvision.models.resnet18(weights=weights)
     if model_name == 'ResNet18-J':
         model = ResNet18J(num_classes=num_classes)
