@@ -23,7 +23,7 @@ class ConvLayer(nn.Module):
         )
 
         batch_norm = nn.BatchNorm2d(num_features=out_channels)
-        non_linear = nn.LeakyReLU()
+        non_linear = nn.ReLU()
 
         self.layer = nn.Sequential(
             conv,

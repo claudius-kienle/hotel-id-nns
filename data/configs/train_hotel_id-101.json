@@ -1,8 +1,8 @@
 {
     "trainer": {
-        "epochs": 40, 
-        "batch_size": 64,
-        "learning_rate": 0.0035,
+        "epochs": 400, 
+        "batch_size": 32,
+        "learning_rate": 0.1,
         "lr_patience": 7,
         "save_checkpoint": true,
         "amp": false,
@@ -14,7 +14,7 @@
         "weight_decay": 0.02
     },
     "classification_type": "hotel-id", 
-    "model_name": "ResNet50",
+    "model_name": "ResNet101",
     "model_weights_imagenet": true,
     "model_finetune": false,
     "model_output": "data/checkpoints",

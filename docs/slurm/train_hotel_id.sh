@@ -7,9 +7,9 @@
 #SBATCH --time=12:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --output="data/logs/train_chain_id-%j.out"
-#SBATCH -J TrainChainID
+#SBATCH -J HotelID
 
-export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_hotel_id.json --data-path ${TMP}"
+export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_hotel_id-$1.json --data-path ${TMP}"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset

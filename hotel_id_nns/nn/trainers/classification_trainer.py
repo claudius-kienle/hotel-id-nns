@@ -42,6 +42,10 @@ class ClassificationTrainer(Trainer):
     ):
         super().__init__(project_name=classification_type.value, trainer_id=trainer_id, device=device)
         self.classification_type = classification_type
+        if self.classification_type == ClassificationType.hotel_id:
+            self.compute_cm = False # don't compute cm, would blow memory
+        else:
+            self.compute_cm = True
         self.verbose = False
 
     def infer(self,
@@ -81,6 +85,9 @@ class ClassificationTrainer(Trainer):
                 metrics = compute_classification_metrics(pred_probs, hotel_ids)
         else:
             raise NotImplementedError()
+
+        if not self.compute_cm and metrics is not None and 'cm' in metrics:
+            metrics.pop("cm")
 
         if self.verbose and metrics is not None:
             ax = plt.subplot()
