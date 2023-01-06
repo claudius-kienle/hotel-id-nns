@@ -98,6 +98,11 @@ Chain ID Prediction Roadmap
   - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
   - -> all non pretrained models performed badly, maybe lr to small
 
+Best Run on TorchVision (pretrained):   fanciful-sweep-35
+Best Run on Our Model (not pretrained): 
+    - ResNet 18 (Chr): kind-silence-186
+    - ResNet 50 (J): wild-sponge-191
+
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
 

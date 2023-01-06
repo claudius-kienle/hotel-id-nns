@@ -8,6 +8,7 @@ from torch import nn
 import torchvision
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg
+from hotel_id_nns.nn.modules.resnet_johannes import ResNet34, ResNet50, ResNet101, ResNet152
 from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer, ClassificationType
 
 dir_path = Path(__file__).parent
@@ -21,21 +22,25 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
         # weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if use_weights else None
         # model = torchvision.models.resnet18(weights=weights)
     elif model_name == 'ResNet34':
-        weights = torchvision.models.ResNet34_Weights.IMAGENET1K_V1 if use_weights else None
-        model = torchvision.models.resnet34(weights=weights)
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        model = ResNet34(num_classes=num_classes)
+        # weights = torchvision.models.ResNet34_Weights.IMAGENET1K_V1 if use_weights else None
+        # model = torchvision.models.resnet34(weights=weights)
+        # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     elif model_name == 'ResNet50':
-        weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2 if use_weights else None
-        model = torchvision.models.resnet50(weights=weights) # weights=weights) # ,num_classes=
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        model = ResNet50(num_classes=num_classes)
+        # weights = torchvision.models.ResNet50_Weights.IMAGENET1K_V2 if use_weights else None
+        # model = torchvision.models.resnet50(weights=weights) # weights=weights) # ,num_classes=
+        # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     elif model_name == 'ResNet101':
-        weights = torchvision.models.ResNet101_Weights.IMAGENET1K_V2 if use_weights else None
-        model = torchvision.models.resnet101(weights=weights) # weights=weights) # ,num_classes=
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        model = ResNet101(num_classes=num_classes)
+        # weights = torchvision.models.ResNet101_Weights.IMAGENET1K_V2 if use_weights else None
+        # model = torchvision.models.resnet101(weights=weights) # weights=weights) # ,num_classes=
+        # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     elif model_name == 'ResNet152':
-        weights = torchvision.models.ResNet152_Weights.IMAGENET1K_V2 if use_weights else None
-        model = torchvision.models.resnet152(weights=weights) # weights=weights) # ,num_classes=
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        model = ResNet152(num_classes=num_classes)
+        # weights = torchvision.models.ResNet152_Weights.IMAGENET1K_V2 if use_weights else None
+        # model = torchvision.models.resnet152(weights=weights) # weights=weights) # ,num_classes=
+        # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     else:
         raise NotImplementedError()
 
