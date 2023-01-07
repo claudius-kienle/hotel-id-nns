@@ -1,15 +1,13 @@
 from argparse import ArgumentParser
 import json
-import re
 import logging
 from pathlib import Path
-from typing import Dict, OrderedDict
-import torch
+from typing import Dict
 from torch import nn
 import torchvision
+from torchsummary import summary
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg, resnet50_cfg
-from hotel_id_nns.nn.modules.resnet_johannes import ResNet18 as ResNet18J, ResNet34, ResNet50, ResNet101, ResNet152
 from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer, ClassificationType
 from hotel_id_nns.utils.pytorch import load_model_weights
 
@@ -28,10 +26,6 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
         weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if use_weights else None
         model.load_state_dict(weights)
         # model = torchvision.models.resnet18(weights=weights)
-    if model_name == 'ResNet18-J':
-        model = ResNet18J(num_classes=num_classes)
-        # weights = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if use_weights else None
-        # model = torchvision.models.resnet18(weights=weights)
     elif model_name == 'ResNet34':
         model = ResNet34(num_classes=num_classes)
         # weights = torchvision.models.ResNet34_Weights.IMAGENET1K_V1 if use_weights else None
@@ -39,6 +33,10 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
         # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     elif model_name == 'ResNet50':
         model = ResNet(network_cfg=resnet50_cfg,out_features=num_classes)
+    elif model_name == 'ResNet50-T':
+        model = torchvision.models.resnet50()
+        import torch
+        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     elif model_name == 'ResNet101':
         model = ResNet101(num_classes=num_classes)
         # weights = torchvision.models.ResNet101_Weights.IMAGENET1K_V2 if use_weights else None
@@ -51,6 +49,8 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
         # model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
     else:
         raise NotImplementedError()
+
+    summary(model, input_size=(3, 224, 224))
 
     # TODO: if config['model_finetune']: # only finetune on final fc
     # TODO:     for param in model.parameters():

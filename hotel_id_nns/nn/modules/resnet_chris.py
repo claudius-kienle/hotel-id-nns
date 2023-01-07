@@ -18,7 +18,7 @@ class ResNetBlock(nn.Module):
 
         c_in = in_channels
         for idx, (kernel_size, c_out) in enumerate(kernel_channel_list):
-            stride = 2 if idx == 0 and sample_down else 1
+            stride = 2 if idx == 1 and sample_down else 1 # sample down at 3x3 convolution
             self.add_module(
                 f"conv_{idx}",
                 nn.Conv2d(kernel_size=kernel_size,
@@ -60,10 +60,10 @@ class ResNetBlock(nn.Module):
             if idx < self.depth - 1:
                 y = getattr(self, f"relu_{idx}")(y)
 
-        y = getattr(self, f"relu_{self.depth - 1}")(y)
-
         if self.downsample is not None:
             x = self.downsample(x)
+
+        y = getattr(self, f"relu_{self.depth - 1}")(y)
 
         return y + x
 
@@ -93,7 +93,7 @@ def build_resnet_block(in_channels: int,
 
 
 def build_global_average_pooling():
-    return GlobalAvgPool2d()
+    return nn.AdaptiveAvgPool2d((1,1))
 
 
 resnet18_cfg = dict(conv1=dict(builder=build_conv2d,
@@ -244,6 +244,7 @@ class ResNet(torch.nn.Module):
         x = self.conv4_x(x)
         x = self.conv5_x(x)
         x = self.global_average_pooling(x)
+        x = torch.flatten(x, 1)
         x = self.fully_connected(x)
         return x
 
