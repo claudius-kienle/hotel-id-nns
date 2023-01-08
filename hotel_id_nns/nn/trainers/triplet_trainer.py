@@ -61,11 +61,16 @@ class TripletTrainer(Trainer):
         p_features = net(p_imgs)
         n_features = net(n_imgs)
 
-        metrics = None
-
         loss: torch.Tensor = loss_criterion(a_features, p_features, n_features)
 
-        return loss, metrics
+        if compute_metrics:
+            info = {
+                'triplet loss': loss,
+            }
+        else:
+            info = None
+
+        return loss, info
 
     def train(
         self,
