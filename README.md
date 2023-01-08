@@ -98,11 +98,9 @@ Chain ID Prediction Roadmap
   - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
   - -> all non pretrained models performed badly, maybe lr to small
 
-Best Run on TorchVision (pretrained):   fanciful-sweep-35
+Best Run on TorchVision (pretrained): peach-tree-201 (1673136565.3055131)
 Best Run on Our Model (not pretrained): 
-    - ResNet 18 (Chr): skilled-energy-190: Overfits
-    - ResNet 18 (J): legendary-rain-192
-    - ResNet 50 (J): drawn-moon-193
+    - ResNet 50 (Chr): glamorous-terrain-200 (1673134614.465067)
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
