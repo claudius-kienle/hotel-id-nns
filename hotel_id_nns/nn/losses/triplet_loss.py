@@ -2,46 +2,37 @@
 import torch
 
 
-def _compute_pairwise_distance_matrix(embeddings: torch.Tensor) -> torch.Tensor:
-    embedding_dot_products = embeddings @ embeddings.T
-    # embedding_dot_products[i, j] == torch.dot(embeddings[i], embeddings[j])
-
-    # embedding_norms is a column vector (norm for each embedding)
-    embedding_norms = torch.norm(embeddings, dim=1).reshape(embeddings.shape[0], 1)
-
-    # norm_multiplications[i, j] = embedding_norms[i] * embedding_norms[j]
-    norm_multiplications = embedding_norms @ embedding_norms.T
-
-    return torch.div(embedding_dot_products, norm_multiplications)  # cos(phi)
-
-
-def _batch_triplet_loss(embeddings: torch.Tensor, labels: torch.Tensor, margin: float = 0.) -> torch.Tensor:
-    pairwise_distances = _compute_pairwise_distance_matrix(embeddings)
-
-    print(pairwise_distances)
-
-    anchor_pos_dist = torch.unsqueeze(pairwise_distances, 2)
-    anchor_neg_dist = torch.unsqueeze(pairwise_distances, 1)
-
-    triplet_loss = anchor_pos_dist - anchor_neg_dist + margin
-
-    # a, p, n -> (labels[a] != labels[p]) or (labels[n] == labels[a]) or (a == p)
-    print(triplet_loss)
-
-
 class TripletLoss(object):
     def __init__(self) -> None:
-        pass
+        self.loss = torch.nn.TripletMarginWithDistanceLoss(distance_function=TripletLoss.similarity)
 
-    def __call__(self, embeddings: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        pass
+    @staticmethod
+    def similarity(a: torch.Tensor, b: torch.Tensor):
+        # Returns a tensor of shape (batch) where each value is between 0 and 1,
+        # 0 meaning a smaller distance and 1 meaning a maximum distance.
+        return 1. - (torch.nn.functional.cosine_similarity(a, b) + 1.) / 2.
+
+    def __call__(self, anchor_batch: torch.Tensor, pos_batch: torch.Tensor, neg_batch: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the batch triplet loss over axis 1.
+
+        :param anchor_batch: shape=(batch, feature)
+        :param pos_batch: shape=(batch, feature)
+        :param neg_batch: shape=(batch, feature)
+        :return: shape=(1)
+        """
+        return self.loss(anchor_batch, pos_batch, neg_batch)
 
 
 if __name__ == "__main__":
-    emb = torch.tensor([[1., 1., -1.],
-                        [-2., 0.5, 1.]])
-    labels = torch.tensor([0, 1, 2])
+    emb1 = torch.ones((4, 10))
+    emb2 = -torch.ones((4, 10))
+    emb3 = torch.ones((4, 10))
 
+    loss = TripletLoss()
 
-    # _batch_triplet_loss(emb, None)
+    print(TripletLoss.similarity(emb1, emb2))
+
+    print(loss(emb1, emb2, emb3))
+
 

@@ -7,6 +7,7 @@ from torch import nn
 
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
+from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
 
 
 class ClassificationType(str, Enum):
@@ -51,10 +52,10 @@ class TripletTrainer(Trainer):
             batch[i] = batch[i].to(device=self.device)
 
         # labels
-        for i in range(3, len(batch)):
-            batch[i] = torch.atleast_1d(batch[i].to(device=self.device).squeeze())
+        # for i in range(3, len(batch)):
+        #     batch[i] = torch.atleast_1d(batch[i].to(device=self.device).squeeze())
 
-        a_imgs, p_imgs, n_imgs, a_chain_ids, p_chain_ids, n_chain_ids, a_hotel_ids, p_hotel_ids, n_hotel_ids = batch
+        a_imgs, p_imgs, n_imgs = batch[0:3]
 
         a_features = net(a_imgs)
         p_features = net(p_imgs)
@@ -75,7 +76,7 @@ class TripletTrainer(Trainer):
         val_ds: H5TripletHotelDataset,
     ):
         # TODO: Add loss criterion here
-        loss_criterion = None
+        loss_criterion = TripletLoss()
 
         return super()._train(
             net=net,
