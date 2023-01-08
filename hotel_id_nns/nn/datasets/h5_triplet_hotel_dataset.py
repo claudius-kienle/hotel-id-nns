@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 from typing import Tuple
 
@@ -45,7 +46,7 @@ class H5TripletHotelDataset(H5HotelDataset):
         a_label = self.class_labels[self.valid_indices[a_ds_index]].item()
 
         # Calculate positive dataset index
-        p_ds_indexes: list = self.label_to_indexes[a_label]
+        p_ds_indexes: list = copy.deepcopy(self.label_to_indexes[a_label])
 
         if len(p_ds_indexes) == 1:
             p_ds_index = a_ds_index
