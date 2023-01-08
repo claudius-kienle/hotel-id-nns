@@ -63,9 +63,11 @@ class ResNetBlock(nn.Module):
         if self.downsample is not None:
             x = self.downsample(x)
 
+        y = y + x
+
         y = getattr(self, f"relu_{self.depth - 1}")(y)
 
-        return y + x
+        return y
 
 
 def build_conv2d(in_channels, out_channels, stride, kernel_size):
