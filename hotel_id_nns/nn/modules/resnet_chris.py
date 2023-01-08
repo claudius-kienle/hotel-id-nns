@@ -1,4 +1,5 @@
 # https://arxiv.org/pdf/1512.03385.pdf
+from copy import deepcopy
 from typing import List, Tuple
 
 import torch
@@ -18,7 +19,7 @@ class ResNetBlock(nn.Module):
 
         c_in = in_channels
         for idx, (kernel_size, c_out) in enumerate(kernel_channel_list):
-            stride = 2 if idx == 1 and sample_down else 1 # sample down at 3x3 convolution
+            stride = 2 if idx == 1 and sample_down else 1  # sample down at 3x3 convolution
             self.add_module(
                 f"conv_{idx}",
                 nn.Conv2d(kernel_size=kernel_size,
@@ -95,7 +96,7 @@ def build_resnet_block(in_channels: int,
 
 
 def build_global_average_pooling():
-    return nn.AdaptiveAvgPool2d((1,1))
+    return nn.AdaptiveAvgPool2d((1, 1))
 
 
 resnet18_cfg = dict(conv1=dict(builder=build_conv2d,
@@ -143,6 +144,7 @@ resnet18_cfg = dict(conv1=dict(builder=build_conv2d,
                                  ]),
                     global_average_pooling=dict(builder=build_global_average_pooling),
                     out_features=512)
+
 _resnet50_conv3_1 = [
     dict(builder=build_resnet_block,
          args=dict(in_channels=256,
@@ -216,6 +218,17 @@ resnet50_cfg = dict(conv1=dict(builder=build_sequential,
                     global_average_pooling=dict(builder=build_global_average_pooling),
                     out_features=2048)
 
+_resnet101_conv4_2_to_23 = [
+    dict(builder=build_resnet_block,
+         args=dict(in_channels=1024,
+                   kernel_channel_list=[(1, 256), (3, 256), (1, 1024)],
+                   sample_down=False)) for _ in range(22)
+]
+_resnet101_conv4_x = _resnet50_conv4_1 + _resnet101_conv4_2_to_23
+
+resnet101_cfg = deepcopy(resnet50_cfg)
+resnet101_cfg["conv4_x"]["args"] = _resnet101_conv4_x
+
 
 class ResNet(torch.nn.Module):
     def __init__(self, network_cfg: dict, out_features):
@@ -252,7 +265,8 @@ class ResNet(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    net = ResNet(resnet50_cfg, 1000)
+    net = ResNet(resnet101_cfg, 1000)
+    print(net)
 
     x = torch.zeros((2, 3, 224, 224))
     y = net(x)
