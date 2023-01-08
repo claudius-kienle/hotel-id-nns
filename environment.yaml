@@ -22,3 +22,5 @@ dependencies:
   - matplotlib
   - pytables
   - ipykernel
+  - pip:
+    - torchsummary

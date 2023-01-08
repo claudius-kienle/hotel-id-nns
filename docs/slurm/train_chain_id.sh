@@ -4,12 +4,12 @@
 #SBATCH --partition=gpu_4,gpu_8,gpu_4_a100
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
-#SBATCH --time=12:00:00
+#SBATCH --time=06:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --output="data/logs/train_chain_id-%j.out"
 #SBATCH -J TrainChainID
 
-export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_chain_id.json --data-path ${TMP}"
+export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py data/configs/train_chain_id.json -m $1 --data-path ${TMP}"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset

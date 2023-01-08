@@ -8,7 +8,7 @@
 #SBATCH --output="data/logs/h5-%j.out"
 #SBATCH -J H5
 
-export EXECUTABLE="python hotel_id_nns/scripts/hdf5_dataset.py"
+export EXECUTABLE="python hotel_id_nns/tools/csv_to_h5_converter.py"
 
 source ~/.bashrc
 conda activate hotel-id-nns
