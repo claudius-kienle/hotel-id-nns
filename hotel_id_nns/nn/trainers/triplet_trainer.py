@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 from hotel_id_nns.nn.trainers.trainer import Trainer
+from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
 from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
 
 
@@ -72,8 +73,7 @@ class TripletTrainer(Trainer):
         checkpoint_dir: Path,
         val_ds: H5TripletHotelDataset,
     ):
-        # TODO: Add loss criterion here
-        loss_criterion = None
+        loss_criterion = TripletLoss()
 
         return super()._train(
             net=net,

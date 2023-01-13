@@ -11,7 +11,8 @@ class H5TripletHotelDataset(H5HotelDataset):
     def __init__(self, annotations_file_path: Path, config: dict):
         super().__init__(annotations_file_path, config)
 
-        self.class_name = config["triplet_class_name"]
+        # self.class_name = config["triplet_class_name"]
+        self.class_name = "hotel_id"
 
         # Create class_to_indexes dictionary for the selected class_name
         if self.class_name == "chain_id":
@@ -33,7 +34,6 @@ class H5TripletHotelDataset(H5HotelDataset):
             label_to_indexes[label].append(dataset_idx)
 
         self.label_to_indexes = label_to_indexes
-        print(self.label_to_indexes)
 
     def _select(self, a, b):
         return [a, b][self._class_selector_idx]

@@ -98,9 +98,15 @@ Chain ID Prediction Roadmap
   - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
   - -> all non pretrained models performed badly, maybe lr to small
 
-Best Run on TorchVision (pretrained): peach-tree-201 (1673136565.3055131)
-Best Run on Our Model (not pretrained): 
-    - ResNet 50 (Chr): glamorous-terrain-200 (1673134614.465067)
+Best Run on TorchVision (pretrained): 
+    - ResNet 50: peach-tree-201 (1673136565.3055131)
+        {'accuracy': 0.4302244782447815, 'mAP@5': 0.5461959838867188, 'precision': 0.5035776495933533, 'recall': 0.4691525101661682, 'f1': 0.46258115768432617}
+    - ResNet 101: atomic-cherry-203 (1673172280.4284968)
+        {'accuracy': 0.41664355993270874, 'mAP@5': 0.525413453578949, 'precision': 0.4989142417907715, 'recall': 0.44573840498924255, 'f1': 0.44782912731170654}
+Best Run on Our Model (pretrained): 
+    - ResNet 50 (Chr): glamorous-butterfly-205 (1673180942.4564664)
+        {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
+
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
