@@ -7,9 +7,11 @@ from typing import Dict
 from torch import nn
 import torchvision
 from torchsummary import summary
+from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
 from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg, resnet50_cfg
 from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer, ClassificationType
+from hotel_id_nns.nn.trainers.triplet_trainer import TripletTrainer
 from hotel_id_nns.utils.pytorch import load_model_weights, inject_dropout
 
 dir_path = Path(__file__).parent
@@ -72,27 +74,17 @@ def train_chain_id(config: Dict, data_path: Path):
     print(config)
     ds_config = config['dataset']
     train_annotations = Path(data_path / ds_config['training'])
-    train_ds = DatasetFactory().get(train_annotations, config=config['dataset'])
+    train_ds = H5TripletHotelDataset(annotations_file_path=train_annotations, config=config['dataset'])
     val_annotations = Path(data_path / ds_config['validation'])
-    val_ds = DatasetFactory().get(val_annotations, config=config['dataset'])
+    val_ds = H5TripletHotelDataset(annotations_file_path=val_annotations, config=config['dataset'])
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 
     trainer_config = ClassificationTrainer.Config.from_config(config['trainer'])
 
-    classification_type = ClassificationType(config['classification_type'])
-
-    trainer = ClassificationTrainer(classification_type=classification_type)
-
-    # determine how many classes we have
-    if classification_type == ClassificationType.chain_id:
-        num_classes = train_ds.num_chain_id_classes
-    elif classification_type == ClassificationType.hotel_id:
-        num_classes = train_ds.num_hotel_id_classes
-    else:
-        raise NotImplementedError()
-
-    class_net = get_model(config, num_classes=num_classes)
+    trainer = TripletTrainer()
+    
+    class_net = get_model(config, num_classes=512)
 
     trainer.train(
         net=class_net,

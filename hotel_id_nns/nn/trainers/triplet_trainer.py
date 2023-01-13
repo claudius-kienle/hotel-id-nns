@@ -31,12 +31,10 @@ class TripletTrainer(Trainer):
 
     def __init__(
             self,
-            classification_type: ClassificationType,
             trainer_id: Optional[str] = None,
             device: Optional[torch.device] = None,
     ):
-        super().__init__(project_name=classification_type.value, trainer_id=trainer_id, device=device)
-        self.classification_type = classification_type
+        super().__init__(project_name='Hotel-ID Trainer', trainer_id=trainer_id, device=device)
 
     def infer(self,
               net: nn.Module,

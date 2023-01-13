@@ -89,6 +89,8 @@ class ClassificationTrainer(Trainer):
 
         if metrics is not None:
             metrics.pop("cm")
+            # validateion round metric should me -f1 (must be descending)
+            loss = - metrics['f1'] 
 
         return loss, metrics
 

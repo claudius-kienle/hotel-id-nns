@@ -103,3 +103,11 @@ def get_optimizer(net: nn.Module, name: str, weight_decay: float,
         )
     else:
         raise RuntimeError(f"invalid optimizer name given {name}")
+
+def inject_dropout(model: nn.Module, rate: float):
+    for name, module in model.named_children():
+        if len(list(module.children())) > 0:
+            inject_dropout(module, rate)
+        if isinstance(module, nn.ReLU):
+            new = nn.Sequential(module, nn.Dropout2d(p=rate))
+            setattr(model, name, new)
