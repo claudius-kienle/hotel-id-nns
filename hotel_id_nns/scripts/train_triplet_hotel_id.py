@@ -6,11 +6,9 @@ from pathlib import Path
 from typing import Dict
 from torch import nn
 import torchvision
-from torchsummary import summary
 from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
-from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg, resnet50_cfg
-from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer, ClassificationType
+from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer
 from hotel_id_nns.nn.trainers.triplet_trainer import TripletTrainer
 from hotel_id_nns.utils.pytorch import load_model_weights, inject_dropout
 
@@ -65,7 +63,11 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
     # TODO:     for param in model.parameters():
     # TODO:         param.requires_grad = False
     if use_weights and model_name[-1] not in ['T', 'J']:
-        model.load_state_dict(get_imagenet_weights(model_name=model_name))
+        weights = get_imagenet_weights(model_name=model_name)
+        del weights['fully_connected.weight']
+        del weights['fully_connected.bias']
+        model.load_state_dict(weights, strict=False)
+
 
     return model
 
@@ -80,7 +82,7 @@ def train_chain_id(config: Dict, data_path: Path):
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 
-    trainer_config = ClassificationTrainer.Config.from_config(config['trainer'])
+    trainer_config = TripletTrainer.Config.from_config(config['trainer'])
 
     trainer = TripletTrainer()
     

@@ -1,22 +1,20 @@
 {
     "trainer": {
         "epochs": 400, 
-        "batch_size": 1, 
-        "learning_rate": 0.0035,
+        "batch_size": 64, 
+        "learning_rate": 0.1,
         "lr_patience": 10,
         "lr_cooldown": 30,
         "save_checkpoint": true,
         "amp": false,
         "activate_wandb": true,
-        "optimizer_name": "sgd",
+        "optimizer_name": "adam",
         "load_from_model": "none",
         "dataloader_num_workers": 10,
-        "loss_type": "CrossEntropy",
         "weight_decay": 0.00,
         "weight_decay-old": 0.02
     },
-    "model_name": "ResNet18",
-    "model_weights_imagenet": false,
+    "model_weights_imagenet": true,
     "model_finetune": false,
     "model_output": "data/checkpoints",
     "dataset": {

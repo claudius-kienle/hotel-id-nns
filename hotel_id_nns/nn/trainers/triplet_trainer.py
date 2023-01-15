@@ -16,26 +16,13 @@ class ClassificationType(str, Enum):
 
 
 class TripletTrainer(Trainer):
-    class Config(Trainer.Config):
-        def __init__(
-                self,
-                loss_type: str,
-                **kwargs,
-        ):
-            super().__init__(**kwargs)
-            self.loss_type = loss_type
-
-        @staticmethod
-        def from_config(config: dict):
-            parent_conf = Trainer.Config.from_config(config)
-            return TripletTrainer.Config(**dict(parent_conf), loss_type=config['loss_type'])
 
     def __init__(
             self,
             trainer_id: Optional[str] = None,
             device: Optional[torch.device] = None,
     ):
-        super().__init__(project_name='Hotel-ID Trainer', trainer_id=trainer_id, device=device)
+        super().__init__(project_name='hotel-id-triplet', trainer_id=trainer_id, device=device)
 
     def infer(self,
               net: nn.Module,
@@ -59,16 +46,14 @@ class TripletTrainer(Trainer):
         p_features = net(p_imgs)
         n_features = net(n_imgs)
 
-        metrics = None
-
-        loss: torch.Tensor = loss_criterion(a_features, p_features, n_features)
+        loss, metrics = loss_criterion(a_features, p_features, n_features)
 
         return loss, metrics
 
     def train(
         self,
         net: torch.nn.Module,
-        config: Config,
+        config: Trainer.Config,
         train_ds: H5TripletHotelDataset,
         checkpoint_dir: Path,
         val_ds: H5TripletHotelDataset,
