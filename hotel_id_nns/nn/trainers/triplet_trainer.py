@@ -68,3 +68,6 @@ class TripletTrainer(Trainer):
             checkpoint_dir=checkpoint_dir,
             loss_criterion=loss_criterion,
         )
+
+    def on_new_epoch(self):
+        return super().on_new_epoch()
