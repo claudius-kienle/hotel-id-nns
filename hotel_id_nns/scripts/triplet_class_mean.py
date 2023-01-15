@@ -11,15 +11,8 @@ from hotel_id_nns.scripts.train_triplet_hotel_id import get_model
 dir_path = Path(__file__).parent
 repo_path = dir_path.parent.parent
 
-def main():
-    with open("data/configs/train_hotel_id_triplet.json", 'r') as f:
-        config =json.load(f)
-
-    config['model_name'] = 'ResNet50'
-
-    model = get_model(config, num_classes=512)
-
-    ds = H5HotelDataset(repo_path / "data/dataset/hotel_train_chain.h5", config=config['dataset'])
+def means(ds_path: str, model, config):
+    ds = H5HotelDataset(repo_path / ds_path, config=config['dataset'])
     dl = DataLoader(ds, batch_size=16)
 
     features = [None] * ds.num_hotel_id_classes
@@ -35,10 +28,30 @@ def main():
         for hotel_id, fv in zip(hotel_ids, feature_vector):
             features[hotel_id.item()].append(fv)
 
-    feature_means = [
+    return features
+
+def main():
+    with open("data/configs/train_hotel_id_triplet.json", 'r') as f:
+        config =json.load(f)
+
+    config['model_name'] = 'ResNet50'
+
+    model = get_model(config, num_classes=512)
+
+    dss = [
+        "data/dataset/hotel_test_chain.h5",
+        # "data/dataset/hotel_train_chain.h5",
+        # "data/dataset/hotel_val_chain.h5"
+    ]
+
+    features = means(dss[0], model, config)
+
+    feature_means = torch.concat([
         torch.mean(torch.stack(feature_vec, dim=0))
         for feature_vec in features
-    ]
+    ])
+
+    torch.save(feature_means, repo_path / 'features.pth')
 
 
 
