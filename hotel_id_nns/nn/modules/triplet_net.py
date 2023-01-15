@@ -7,10 +7,10 @@ from torch.nn import functional as F
 
 class TripletNet(nn.Module):
 
-    def __init__(self, latent_dim: int = 128) -> None:
+    def __init__(self, backbone: torch.nn.Module) -> None:
         super().__init__()
 
-        self.backbone = ResNet(resnet50_cfg, out_features=latent_dim)
+        self.backbone = backbone
 
 
     def forward(x: torch.Tensor) -> torch.Tensor:
