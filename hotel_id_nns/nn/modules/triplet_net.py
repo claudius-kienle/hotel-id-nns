@@ -1,5 +1,6 @@
 from turtle import forward
 from torch import nn
+import torch
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet50_cfg
 from hotel_id_nns.nn.modules.conv_layer import ConvLayer
 import torch
@@ -13,7 +14,7 @@ class TripletNet(nn.Module):
         self.backbone = backbone
 
 
-    def forward(x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.backbone(x)
         x = F.normalize(x, p=2, dim=1)
         return x

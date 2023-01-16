@@ -17,18 +17,36 @@ class ClassificationType(str, Enum):
 
 class TripletTrainer(Trainer):
 
+    class Config(Trainer.Config):
+
+        def __init__(self, epochs: int, batch_size: int, learning_rate: float, weight_decay: float,
+                     lr_patience: int, lr_cooldown: int, save_checkpoint: bool, amp: bool,
+                     loss_type: str,
+                     activate_wandb: bool, optimizer_name: str, load_from_model: Optional[Path],
+                     dataloader_num_workers: Optional[int]):
+            self.loss_type = loss_type
+            super().__init__(epochs, batch_size, learning_rate, weight_decay, lr_patience,
+                             lr_cooldown, save_checkpoint, amp, activate_wandb, optimizer_name,
+                             load_from_model, dataloader_num_workers)
+        @staticmethod
+        def from_config(config: dict):
+            parent_conf = Trainer.Config.from_config(config)
+            return TripletTrainer.Config(**dict(parent_conf), loss_type=config['loss_type'])
+
     def __init__(
-            self,
-            trainer_id: Optional[str] = None,
-            device: Optional[torch.device] = None,
+        self,
+        trainer_id: Optional[str] = None,
+        device: Optional[torch.device] = None,
     ):
         super().__init__(project_name='hotel-id-triplet', trainer_id=trainer_id, device=device)
 
-    def infer(self,
-              net: nn.Module,
-              batch: List[torch.Tensor],
-              loss_criterion,
-              compute_metrics: bool = False) -> Tuple[torch.Tensor, Optional[Dict[str, torch.Tensor]]]:
+    def infer(
+            self,
+            net: nn.Module,
+            batch: List[torch.Tensor],
+            loss_criterion,
+            compute_metrics: bool = False
+    ) -> Tuple[torch.Tensor, Optional[Dict[str, torch.Tensor]]]:
 
         # TODO: Add metric computation
 
@@ -53,12 +71,22 @@ class TripletTrainer(Trainer):
     def train(
         self,
         net: torch.nn.Module,
-        config: Trainer.Config,
+        config: Config,
         train_ds: H5TripletHotelDataset,
         checkpoint_dir: Path,
         val_ds: H5TripletHotelDataset,
     ):
-        loss_criterion = TripletLoss()
+        if config.loss_type == 'MSE':
+            distance_function = torch.nn.PairwiseDistance(p=2)
+        elif config.loss_type == 'Cosine':
+            distance_function = torch.nn.CosineSimilarity()
+        else:
+            raise NotImplementedError()
+
+        loss_criterion = TripletLoss(
+            distance_function=distance_function,
+            margin=0.2,
+        )
 
         return super()._train(
             net=net,

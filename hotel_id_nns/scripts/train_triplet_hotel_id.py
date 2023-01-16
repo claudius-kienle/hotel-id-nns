@@ -1,28 +1,23 @@
 from argparse import ArgumentParser
-import torch
 import json
 import logging
 from pathlib import Path
 from typing import Dict
-from torch import nn
-import torchvision
 from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
-from hotel_id_nns.nn.trainers.classification_trainer import ClassificationTrainer
 from hotel_id_nns.nn.trainers.triplet_trainer import TripletTrainer
 from hotel_id_nns.nn.modules.triplet_net import TripletNet
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg, resnet50_cfg
-from hotel_id_nns.utils.pytorch import load_model_weights, inject_dropout
 
 dir_path = Path(__file__).parent
 repo_path = dir_path.parent.parent
 
-def get_model(config: Dict, latent_size: int = 128) -> nn.Module:
+def get_model(config: Dict, latent_size: int = 128):
     model_name = config['model_name']
 
     if model_name == 'ResNet18':
         backbone = ResNet(resnet18_cfg, out_features=latent_size)
     elif model_name == 'ResNet50':
-        backbone = ResNet(resnet18_cfg, out_features=latent_size)
+        backbone = ResNet(resnet50_cfg, out_features=latent_size)
     else:
         raise NotImplementedError()
     
