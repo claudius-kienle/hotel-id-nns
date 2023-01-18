@@ -108,6 +108,21 @@ Best Run on Our Model (pretrained):
         {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
 
 
+Further Improvements to Test:
+- Use Adam + higher lr (not that sensitive to lr, converges faster?)
+- use Dropout Rate (0.1)
+- 
+
+Active Runs:
+- Hotel ID wd 2e-5, lr 3.5e-3
+- Triplet
+  - Cosine
+    - wd 2e-5, lr 3.5e-3
+    - wd 0, lr 3.5e-3
+  - MSE
+    - wd 2e-5, lr 3.5e-3
+    - wd 0, lr 3.5e-3
+
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
 
