@@ -11,8 +11,15 @@ class TripletClassificationNet(nn.Module):
         super().__init__()
 
         self.backbone = backbone
-
-        self.fc1 = nn.Linear(in_features=backbone_out_features, out_features=num_classes)
+        self.classifier = nn.Sequential(
+            nn.Linear(128, 1024),
+            nn.ReLU(True),
+            # nn.Dropout(p=dropout),
+            nn.Linear(1024, 1024),
+            nn.ReLU(True),
+            # nn.Dropout(p=dropout),
+            nn.Linear(1024, num_classes),
+        )
     
     def load_state_dict(self, state_dict: Mapping[str, Any]):
         if len(state_dict) == len(self.state_dict()):
@@ -27,6 +34,6 @@ class TripletClassificationNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.backbone(x)
-        x = self.fc1(x)
+        x = self.classifier(x)
         return x
 

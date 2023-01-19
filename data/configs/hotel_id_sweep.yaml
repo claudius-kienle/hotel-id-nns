@@ -1,0 +1,17 @@
+program: hotel_id_nns/scripts/train_sweep.py
+method: bayes
+project: hotel-id
+metric:
+  goal: minimize
+  name: validation loss
+parameters:
+  weight_decay:
+    min: 0.00001
+    max: 1.0
+    distribution: uniform
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - data/configs/train_hotel_id.json
+  # - ${args}

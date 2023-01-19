@@ -1,15 +1,14 @@
 import argparse
 from pathlib import Path
 from enum import Enum
-import copy
 from matplotlib import pyplot as plt
 import torch
-import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 from hotel_id_nns.nn.datasets.h5_triplet_hotel_dataset import H5TripletHotelDataset
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet50_cfg
+from hotel_id_nns.nn.modules.triplet_net import TripletNet
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
 from hotel_id_nns.utils.pytorch import compute_classification_metrics, load_model_weights
 
@@ -24,17 +23,19 @@ def main(args):
     config = {
         "remove_unkown_chain_id_samples": class_type == ClassType.chain_id
     }
-    ds = H5TripletHotelDataset(annotations_file_path=root_dir / args.dataset_path, config=config)
+    ds = H5HotelDataset(annotations_file_path=root_dir / args.dataset_path, config=config)
 
-    features = torch.load(root_dir / "features.pth")
+    # features = torch.load(root_dir / "means.pt")
+    features = torch.load((root_dir / args.model_path).parent / "means.pt")
 
     if class_type == ClassType.chain_id:
         num_classes = ds.num_chain_id_classes
     elif class_type == ClassType.hotel_id:
         num_classes = ds.num_hotel_id_classes
 
-    class_net =  ResNet(network_cfg=resnet50_cfg, out_features=512)
+    class_net = TripletNet(backbone=ResNet(network_cfg=resnet50_cfg, out_features=128))
     class_net.load_state_dict(load_model_weights(root_dir / args.model_path))
+    class_net = class_net.to('cuda')
 
     # load model weights and map if was DataParallel model
 
@@ -49,26 +50,33 @@ def main(args):
     idx = 0
     ds = tqdm(ds)
     for sample in ds:
-        # input_img, chain_id, hotel_id = sample
-        input_img, p_img, n_img, chain_id, _, _, hotel_id, _, _ = sample
+        input_img, chain_id, hotel_id = sample
+        # input_img, p_img, n_img, chain_id, _, _, hotel_id, _, _ = sample
 
         if class_type == ClassType.chain_id:
             label = chain_id
         elif class_type == ClassType.hotel_id:
             label = hotel_id
 
-        pred_features = class_net(input_img)
-        pos_pred_features = class_net(p_img)
-        neg_pred_features = class_net(n_img)
+        input_img = input_img.to("cuda")
 
-        pred_label_probs = torch.sqrt(torch.sum((pred_features[:, None] - features[None]) ** 2, dim=-1))
+        pred_features = class_net(input_img).cpu()
+        # pos_pred_features = class_net(p_img)
+        # neg_pred_features = class_net(n_img)
+        if True:
+            pred_label_probs = torch.nn.CosineSimilarity(dim=-1)(pred_features[:, None], features[None])
+            pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
+        else:
+            pred_label_probs = torch.sqrt(torch.sum((pred_features[:, None] - features[None]) ** 2, dim=-1))
+            pred_label_probs = 1 - pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
 
-        from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
+        # from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
         # TripletLoss()(pred_features, features[hotel_id], None)
-        TripletLoss()(pred_features, pos_pred_features, neg_pred_features)
+        # TripletLoss()(pred_features, pos_pred_features, neg_pred_features)
 
-        _, pred_label = torch.min(pred_label_probs, dim=1)
-        pred_label_probs = 1 - pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
+
+        pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
+        _, pred_label = torch.max(pred_label_probs, dim=1)
         gt.append(label)
         preds.append(pred_label)
         metrics = compute_classification_metrics(pred_label_probs, label.squeeze())
@@ -84,8 +92,9 @@ def main(args):
         prints = {key: value.item() for key, value in metrics.items()}
         ds.set_postfix(prints)
         idx += 1
-        if idx == 40:
-            break
+        if 'train' in args.dataset_path: # stop early on train datset
+            if idx == 40:
+                break
 
     gt = torch.concat(gt).squeeze()
     preds = torch.concat(preds)
@@ -101,6 +110,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("model_path", type=Path)
-    parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_train_chain.h5")
+    parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_test_chain.h5")
     parser.add_argument('--batch-size', type=int, default=32)
     main(parser.parse_args())
