@@ -98,7 +98,7 @@ Chain ID Prediction Roadmap
   - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
   - -> all non pretrained models performed badly, maybe lr to small
 
-Best Run on TorchVision (pretrained): 
+Best Run on TorchVision (pretrained): difference
     - ResNet 50: peach-tree-201 (1673136565.3055131)
         {'accuracy': 0.4302244782447815, 'mAP@5': 0.5461959838867188, 'precision': 0.5035776495933533, 'recall': 0.4691525101661682, 'f1': 0.46258115768432617}
     - ResNet 101: atomic-cherry-203 (1673172280.4284968)
@@ -108,20 +108,50 @@ Best Run on Our Model (pretrained):
         {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
 
 
-Further Improvements to Test:
-- Use Adam + higher lr (not that sensitive to lr, converges faster?)
-- use Dropout Rate (0.1)
-- 
+Hotel ID Prediction Roadmap
+------------------------
 
-Active Runs:
-- Hotel ID wd 2e-5, lr 3.5e-3
-- Triplet
-  - Cosine
-    - wd 2e-5, lr 3.5e-3
-    - wd 0, lr 3.5e-3
-  - MSE
-    - wd 2e-5, lr 3.5e-3
-    - wd 0, lr 3.5e-3
+1. Classical ResNet classification
+    2. Without Regularization (weight_decay=0)
+        - ResNet 50 (1673631392.28741)
+            - TestSet: {'accuracy': 0.037278272211551666, 'mAP@5': 0.05137887969613075, 'precision': 0.03697093576192856, 'recall': 0.03735203295946121, 'f1': 0.03709796816110611}
+            - TrainSet: {'accuracy': 0.948437511920929, 'mAP@5': 0.949999988079071, 'precision': 0.947555422782898, 'recall': 0.9483367204666138, 'f1': 0.9478158950805664}
+            - Easily overfits
+            - Sweep on weight decay and two models with wd 0.1 and 0.01
+    1. sweep: did not train at all
+    2. two models with 0.1, 0.01 also did not converge: assume wd still to high
+        - new model with wd 2e-5 (torchvision default): did not converge, lr 0.1 just to high
+    3. Use Adam + higher lr (not that sensitive to lr, converges faster?): converges faster but lr 0.1 to high
+    4.  use Dropout Rate (0.1): nothing changed, equivalent to wd
+    5.  Final Net  Hotel ID wd 2e-5, lr 3.5e-3
+
+2.  Triplet Learning
+    1.  First model had no unit circle map, no clamp, MSE Loss
+        loss reduced quite a bit (1673706823.917135), but approach with mean of class has map@5=0
+    2.  Two new models with MAP and cosine similarity, 'correct' loss and map to unit circle (normalization)
+        - MSE loss net (1673797952.4643068) produces good looking results (~0.8 distance on unit circle)
+            - Computing the mean for each hotel-id class results in metrics with cosine similarity for label probs: 
+                - Train set {'accuracy': 0.09921874850988388, 'mAP@5': 0.1398177295923233, 'precision': 0.09918095171451569, 'recall': 0.09957157075405121, 'f1': 0.09931115806102753}
+                - Test set {'accuracy': 0.026348039507865906, 'mAP@5': 0.0437028706073761, 'precision': 0.026427101343870163, 'recall': 0.026427101343870163, 'f1': 0.026427101343870163}
+        - Cosine Similarity Loss (1673959543.7748818) also converges
+            - Mean for each class:
+                - Train set {'accuracy': 0.10000000149011612, 'mAP@5': 0.14813801646232605, 'precision': 0.10040322691202164, 'recall': 0.10040322691202164, 'f1': 0.10040322691202164}
+                - Test set {'accuracy': 0.025876697152853012, 'mAP@5': 0.04259442910552025, 'precision': 0.02595576085150242, 'recall': 0.02595576085150242, 'f1': 0.02595576085150242}
+    3. Add simple classification net on triplet-net backbone
+        - MSE loss backbone
+            - wd 2e-5, lr 3.5e-3
+                -   Train set
+                -   Test set
+            - wd 0, lr 3.5e-3
+                -   Train set
+                -   Test set
+        - Cosine similarity loss backbone
+            - wd 2e-5, lr 3.5e-3
+                -   Train set
+                -   Test set
+            - wd 0, lr 3.5e-3
+                -   Train set
+                -   Test set
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---
