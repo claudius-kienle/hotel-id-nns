@@ -4,12 +4,12 @@
 #SBATCH --partition=gpu_4,gpu_8,gpu_4_a100
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --output="data/logs/train_hotel_id-%j.out"
-#SBATCH -J HotelID
+#SBATCH --output="data/logs/triplet-%j.out"
+#SBATCH -J Triplet
 
-export EXECUTABLE="python hotel_id_nns/scripts/train_classification.py $1 -m $2 --wd $3 --lr 0.1 --data-path ${TMP}"
+export EXECUTABLE="python hotel_id_nns/scripts/train_triplet_hotel_id.py $1 -m $2 --data-path ${TMP}"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset
@@ -19,7 +19,5 @@ conda activate hotel-id-nns
 
 startexe=${EXECUTABLE}
 echo "Executable ${EXECUTABLE} running on ${SLURM_JOB_CPUS_PER_NODE} cores with ${OMP_NUM_THREADS} threads"
-echo $1
-echo $2
 echo $startexe
 exec $startexe

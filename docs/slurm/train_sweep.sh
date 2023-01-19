@@ -6,10 +6,10 @@
 #SBATCH --cpus-per-task=40
 #SBATCH --time=12:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --output="data/logs/train_chain_id-%j.out"
-#SBATCH -J TrainChainID
+#SBATCH --output="data/logs/train_hotel-id-%j.out"
+#SBATCH -J HotelIdAgent
 
-export EXECUTABLE="wandb agent hotel-id-nns/ClassNet/tiigj472"
+export EXECUTABLE="wandb agent hotel-id-nns/hotel-id/m0dxgylk"
 
 source ~/.bashrc
 mkdir -p $TMP/data/dataset
