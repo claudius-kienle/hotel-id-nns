@@ -1,0 +1,5 @@
+outs:
+- md5: 4a8caac1fbe2aaa310c0add0fe21d5ca.dir
+  size: 198736216
+  nfiles: 6
+  path: hotel-id-triplet
