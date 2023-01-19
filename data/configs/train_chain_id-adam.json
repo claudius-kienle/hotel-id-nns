@@ -1,9 +1,9 @@
 {
     "trainer": {
-        "epochs": 400, 
-        "batch_size": 128, 
-        "learning_rate": 0.0035,
-        "lr_patience": 10,
+        "epochs": 800, 
+        "batch_size": 64,
+        "learning_rate": 0.1,
+        "lr_patience": 20,
         "lr_cooldown": 30,
         "save_checkpoint": true,
         "amp": false,
@@ -12,16 +12,16 @@
         "load_from_model": "none",
         "dataloader_num_workers": 10,
         "loss_type": "CrossEntropy",
-        "weight_decay": 2e-5 
+        "weight_decay": 0.012
     },
-    "classification_type": "hotel-id", 
-    "model_weights_imagenet": false, 
+    "classification_type": "chain-id", 
+    "model_weights_imagenet": true,
     "model_finetune": false,
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
         "validation": "data/dataset/hotel_val_chain.h5",
-        "remove_unkown_chain_id_samples": false,
+        "remove_unkown_chain_id_samples": true,
         "input_size": 512
     }
 }

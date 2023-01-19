@@ -9,14 +9,15 @@
         "amp": false,
         "activate_wandb": true,
         "optimizer_name": "adam",
-        "load_from_model": "none",
+        "load_from_model": "data/checkpoints/hotel-id-triplet/1673797952.4643068/e55.pth",
         "dataloader_num_workers": 10,
         "loss_type": "CrossEntropy",
         "weight_decay": 2e-5 
     },
     "classification_type": "hotel-id", 
     "model_weights_imagenet": false, 
-    "model_finetune": false,
+    "model_finetune": true,
+    "model_name": "TripletNet",
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",

@@ -2,7 +2,7 @@
     "trainer": {
         "epochs": 800, 
         "batch_size": 64,
-        "learning_rate": 0.0035,
+        "learning_rate": 0.1,
         "lr_patience": 20,
         "lr_cooldown": 30,
         "save_checkpoint": true,
@@ -17,6 +17,7 @@
     "classification_type": "chain-id", 
     "model_weights_imagenet": true,
     "model_finetune": false,
+    "dropout_rate": 0.1,
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
