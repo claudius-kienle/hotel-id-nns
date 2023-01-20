@@ -10,6 +10,8 @@ from tqdm import tqdm
 from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet50_cfg
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
+from hotel_id_nns.nn.modules.tripet_classification_net import TripletClassificationNet
+from hotel_id_nns.nn.modules.triplet_net import TripletNet
 from hotel_id_nns.utils.pytorch import compute_classification_metrics, load_model_weights
 
 root_dir = Path(__file__).parent.parent.parent
@@ -29,19 +31,29 @@ def main(args):
         num_classes = ds.num_chain_id_classes
     elif class_type == ClassType.hotel_id:
         num_classes = ds.num_hotel_id_classes
+    
+    weights = load_model_weights(root_dir / args.model_path)
 
-    try:
-        class_net =  ResNet(network_cfg=resnet50_cfg, out_features=num_classes)
-        class_net.load_state_dict(load_model_weights(root_dir / args.model_path))
-    except:
-        class_net = torchvision.models.resnet50()
-        # class_net = torchvision.models.resnet101()
-        class_net.fc = torch.nn.Linear(class_net.fc.in_features, num_classes)
-        class_net.load_state_dict(load_model_weights(root_dir / args.model_path))
+    if 'classifier.4.bias' in weights: # triplet classification
+        backbone = TripletNet(backbone=ResNet(network_cfg=resnet50_cfg, out_features=128))
+        class_net = TripletClassificationNet(backbone=backbone, backbone_out_features=128, num_classes=num_classes)
+        class_net.load_state_dict(weights)
+    else:
+        try:
+            class_net =  ResNet(network_cfg=resnet50_cfg, out_features=num_classes)
+            class_net.load_state_dict(weights)
+        except e:
+            print(e)
+            class_net = torchvision.models.resnet50()
+            # class_net = torchvision.models.resnet101()
+            class_net.fc = torch.nn.Linear(class_net.fc.in_features, num_classes)
+            class_net.load_state_dict(weights)
 
     # load model weights and map if was DataParallel model
 
     ds = DataLoader(ds, batch_size=args.batch_size)
+
+    class_net = class_net.to("cuda")
     
     # generate predictions on dataset
     gt = []
@@ -54,12 +66,15 @@ def main(args):
     for sample in ds:
         input_img, chain_id, hotel_id = sample
 
+        input_img = input_img.to("cuda")
+
         if class_type == ClassType.chain_id:
             label = chain_id
         elif class_type == ClassType.hotel_id:
             label = hotel_id
 
-        pred_label_probs = class_net(input_img)
+        pred_label_probs = class_net(input_img).cpu()
+        print(torch.sort(pred_label_probs, descending=True))
         num_classes = pred_label_probs.shape[-1]
         pred_label = torch.argmax(pred_label_probs, dim=-1)
         gt.append(label)
@@ -77,8 +92,8 @@ def main(args):
         prints = {key: value.item() for key, value in metrics.items()}
         ds.set_postfix(prints)
         idx += 1
-        if idx == 40:
-            break
+        # if idx == 40:
+        #     break
 
     gt = torch.concat(gt).squeeze()
     preds = torch.concat(preds)
@@ -95,5 +110,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("model_path", type=Path)
     parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_train_chain.h5")
-    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--batch-size', type=int, default=128)
     main(parser.parse_args())
