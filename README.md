@@ -98,14 +98,15 @@ Chain ID Prediction Roadmap
   - best net: pretrained on imagenet, ResNet50, no finetuning, lr ~ 0.0035
   - -> all non pretrained models performed badly, maybe lr to small
 
-Best Run on TorchVision (pretrained): difference
+- Best Run on TorchVision (pretrained): difference
     - ResNet 50: peach-tree-201 (1673136565.3055131)
         {'accuracy': 0.4302244782447815, 'mAP@5': 0.5461959838867188, 'precision': 0.5035776495933533, 'recall': 0.4691525101661682, 'f1': 0.46258115768432617}
     - ResNet 101: atomic-cherry-203 (1673172280.4284968)
         {'accuracy': 0.41664355993270874, 'mAP@5': 0.525413453578949, 'precision': 0.4989142417907715, 'recall': 0.44573840498924255, 'f1': 0.44782912731170654}
-Best Run on Our Model (pretrained): 
+- Best Run on Our Model (pretrained): 
     - ResNet 50 (Chr): glamorous-butterfly-205 (1673180942.4564664)
-        {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
+        - Test:  {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
+        - Train: {'accuracy': 0.5951172113418579, 'mAP@5': 0.6947623491287231, 'precision': 0.7294825315475464, 'recall': 0.7660961151123047, 'f1': 0.7145957946777344}
 
 
 Hotel ID Prediction Roadmap
@@ -123,7 +124,9 @@ Hotel ID Prediction Roadmap
         - new model with wd 2e-5 (torchvision default): did not converge, lr 0.1 just to high
     3. Use Adam + higher lr (not that sensitive to lr, converges faster?): converges faster but lr 0.1 to high
     4.  use Dropout Rate (0.1): nothing changed, equivalent to wd
-    5.  Final Net  Hotel ID wd 2e-5, lr 3.5e-3
+    5.  Final Net Hotel ID 
+        - wd 2e-5, lr 3.5e-3: PENDING
+        - wd 0.012, lr 3.5e-3 (1674181228.755098): did not converge
 
 2.  Triplet Learning
     1.  First model had no unit circle map, no clamp, MSE Loss
@@ -139,19 +142,25 @@ Hotel ID Prediction Roadmap
                 - Test set {'accuracy': 0.025876697152853012, 'mAP@5': 0.04259442910552025, 'precision': 0.02595576085150242, 'recall': 0.02595576085150242, 'f1': 0.02595576085150242}
     3. Add simple classification net on triplet-net backbone
         - MSE loss backbone
-            - wd 2e-5, lr 3.5e-3
+            - wd 2e-5, lr 0.1 (1674181285.901832)
+                -   Train set {'accuracy': 0.4006877839565277, 'mAP@5': 0.477467805147171, 'precision': 0.40475237369537354, 'recall': 0.405136376619339, 'f1': 0.4043208658695221}
+                -   Test set {'accuracy': 0.03125, 'mAP@5': 0.05229640007019043, 'precision': 0.03135787695646286, 'recall': 0.03099135123193264, 'f1': 0.030993277207016945}
+                - -> large gap, assuming overfit, increase wd (0.012)
+            - wd 0, lr 0.1 (1674181228.755045): did not converge
+            - wd 2e-5, lr 3.5e-3: PENDING
                 -   Train set
                 -   Test set
-            - wd 0, lr 3.5e-3
-                -   Train set
-                -   Test set
+            - wd 2e-5, lr 3.5e-3, no finetune: PENDING
+            - wd 0.012, lr 3.5e-3: PENDING
         - Cosine similarity loss backbone
-            - wd 2e-5, lr 3.5e-3
+            - wd 2e-5, lr 0.1 (1674181628.1866858)
+                -   Train set {'accuracy': 0.5168589949607849, 'mAP@5': 0.5907645225524902, 'precision': 0.5221248865127563, 'recall': 0.521905779838562, 'f1': 0.5213735699653625}
+                -   Test set {'accuracy': 0.04022468999028206, 'mAP@5': 0.059081222862005234, 'precision': 0.03967942297458649, 'recall': 0.03967365249991417, 'f1': 0.03931482508778572}
+            - wd 0, lr 3.5e-3 (1674182383.6598442): did not converge
+            - wd 2e-5, lr 3.5e-3: PENDING
                 -   Train set
                 -   Test set
-            - wd 0, lr 3.5e-3
-                -   Train set
-                -   Test set
+            - wd 0.012, lr 3.5e-3: PENDING
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---

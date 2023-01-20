@@ -74,7 +74,13 @@ def get_model(config: Dict, num_classes: int) -> nn.Module:
     # TODO:     for param in model.parameters():
     # TODO:         param.requires_grad = False
     if use_weights and model_name[-1] not in ['T', 'J'] and 'Triplet' not in model_name:
-        model.load_state_dict(get_imagenet_weights(model_name=model_name))
+        weights = get_imagenet_weights(model_name=model_name)
+        if num_classes != 87: #  not chain-id
+            del weights["fully_connected.weight"]
+            del weights["fully_connected.bias"]
+            model.load_state_dict(weights, strict=False)
+        else:
+            model.load_state_dict(weights, strict=True)
 
     return model
 

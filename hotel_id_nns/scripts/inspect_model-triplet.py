@@ -24,6 +24,7 @@ def main(args):
         "remove_unkown_chain_id_samples": class_type == ClassType.chain_id
     }
     ds = H5HotelDataset(annotations_file_path=root_dir / args.dataset_path, config=config)
+    print(len(ds))
 
     # features = torch.load(root_dir / "means.pt")
     features = torch.load((root_dir / args.model_path).parent / "means.pt")
@@ -40,6 +41,7 @@ def main(args):
     # load model weights and map if was DataParallel model
 
     ds = DataLoader(ds, batch_size=args.batch_size)
+    mapping = torch.load((root_dir / args.dataset_path).parent / "hotel-chain-id.pt")
     
     # generate predictions on dataset
     gt = []
@@ -70,12 +72,13 @@ def main(args):
             pred_label_probs = torch.sqrt(torch.sum((pred_features[:, None] - features[None]) ** 2, dim=-1))
             pred_label_probs = 1 - pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
 
+        pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
+
         # from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
         # TripletLoss()(pred_features, features[hotel_id], None)
         # TripletLoss()(pred_features, pos_pred_features, neg_pred_features)
 
 
-        pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
         _, pred_label = torch.max(pred_label_probs, dim=1)
         gt.append(label)
         preds.append(pred_label)

@@ -12,7 +12,7 @@ class TripletClassificationNet(nn.Module):
 
         self.backbone = backbone
         self.classifier = nn.Sequential(
-            nn.Linear(128, 1024),
+            nn.Linear(backbone_out_features, 1024),
             nn.ReLU(True),
             # nn.Dropout(p=dropout),
             nn.Linear(1024, 1024),
