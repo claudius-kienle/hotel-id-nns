@@ -19,7 +19,7 @@ class ClassType(Enum):
     chain_id = 1
 
 def main(args):
-    class_type = ClassType.hotel_id
+    class_type = ClassType.chain_id
     config = {
         "remove_unkown_chain_id_samples": class_type == ClassType.chain_id
     }
@@ -36,10 +36,11 @@ def main(args):
 
     class_net = TripletNet(backbone=ResNet(network_cfg=resnet50_cfg, out_features=128))
     class_net.load_state_dict(load_model_weights(root_dir / args.model_path))
-    class_net = class_net.to('cuda')
+    # class_net = class_net.to('cuda')
 
     # load model weights and map if was DataParallel model
 
+    mapping = torch.load((root_dir / args.dataset_path).parent / "hotel-chain-id.pt")
     ds = DataLoader(ds, batch_size=args.batch_size)
     mapping = torch.load((root_dir / args.dataset_path).parent / "hotel-chain-id.pt")
     
@@ -60,7 +61,7 @@ def main(args):
         elif class_type == ClassType.hotel_id:
             label = hotel_id
 
-        input_img = input_img.to("cuda")
+        # input_img = input_img.to("cuda")
 
         pred_features = class_net(input_img).cpu()
         # pos_pred_features = class_net(p_img)
@@ -72,13 +73,16 @@ def main(args):
             pred_label_probs = torch.sqrt(torch.sum((pred_features[:, None] - features[None]) ** 2, dim=-1))
             pred_label_probs = 1 - pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
 
-        pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=1, keepdim=True)
+        if class_type == ClassType.chain_id:
+            valid_hotel_ids = mapping != -1
+            mapping[~valid_hotel_ids] = 0 
+            mapping_onehot = torch.nn.functional.one_hot(mapping)
+            mapping_onehot[valid_hotel_ids] = 0
 
-        # from hotel_id_nns.nn.losses.triplet_loss import TripletLoss
-        # TripletLoss()(pred_features, features[hotel_id], None)
-        # TripletLoss()(pred_features, pos_pred_features, neg_pred_features)
+            # pred_label_probs = pred_label_probs @ mapping_onehot.to(torch.float32)
+            pred_label_probs = (pred_label_probs[:, :, None] * mapping_onehot).max(dim=1)[0]
 
-
+        pred_label_probs = pred_label_probs / torch.sum(pred_label_probs, dim=0, keepdim=True)
         _, pred_label = torch.max(pred_label_probs, dim=1)
         gt.append(label)
         preds.append(pred_label)
@@ -95,7 +99,7 @@ def main(args):
         prints = {key: value.item() for key, value in metrics.items()}
         ds.set_postfix(prints)
         idx += 1
-        if 'train' in args.dataset_path: # stop early on train datset
+        if 'train' in args.dataset_path.as_posix(): # stop early on train datset
             if idx == 40:
                 break
 

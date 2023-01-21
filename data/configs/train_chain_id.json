@@ -1,16 +1,16 @@
 {
     "trainer": {
         "epochs": 800, 
-        "batch_size": 64,
-        "learning_rate": 0.1,
+        "batch_size": 32,
+        "learning_rate": 0.0035,
         "lr_patience": 20,
         "lr_cooldown": 30,
         "save_checkpoint": true,
-        "amp": false,
+        "amp": true,
         "activate_wandb": true,
         "optimizer_name": "sgd",
         "load_from_model": "none",
-        "dataloader_num_workers": 10,
+        "dataloader_num_workers": 0,
         "loss_type": "CrossEntropy",
         "weight_decay": 0.012
     },

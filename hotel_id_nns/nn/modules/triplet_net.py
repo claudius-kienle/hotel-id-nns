@@ -18,4 +18,3 @@ class TripletNet(nn.Module):
         x = self.backbone(x)
         x = F.normalize(x, p=2, dim=1)
         return x
-

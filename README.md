@@ -125,8 +125,9 @@ Hotel ID Prediction Roadmap
     3. Use Adam + higher lr (not that sensitive to lr, converges faster?): converges faster but lr 0.1 to high
     4.  use Dropout Rate (0.1): nothing changed, equivalent to wd
     5.  Final Net Hotel ID 
-        - wd 2e-5, lr 3.5e-3: PENDING
+        - wd 2e-5, lr 3.5e-3 (1674222514.1669555): # TODO
         - wd 0.012, lr 3.5e-3 (1674181228.755098): did not converge
+        - wd 0.012, lr 3.5e-3, patience 40: # TODO PENDING
 
 2.  Triplet Learning
     1.  First model had no unit circle map, no clamp, MSE Loss
@@ -147,20 +148,20 @@ Hotel ID Prediction Roadmap
                 -   Test set {'accuracy': 0.03125, 'mAP@5': 0.05229640007019043, 'precision': 0.03135787695646286, 'recall': 0.03099135123193264, 'f1': 0.030993277207016945}
                 - -> large gap, assuming overfit, increase wd (0.012)
             - wd 0, lr 0.1 (1674181228.755045): did not converge
-            - wd 2e-5, lr 3.5e-3: PENDING
+            - wd 2e-5, lr 3.5e-3: # TODO PENDING
                 -   Train set
                 -   Test set
-            - wd 2e-5, lr 3.5e-3, no finetune: PENDING
-            - wd 0.012, lr 3.5e-3: PENDING
+            - wd 2e-5, lr 3.5e-3, no finetune: # TODO PENDING
+            - wd 0.012, lr 3.5e-3: # TODO PENDING
         - Cosine similarity loss backbone
             - wd 2e-5, lr 0.1 (1674181628.1866858)
                 -   Train set {'accuracy': 0.5168589949607849, 'mAP@5': 0.5907645225524902, 'precision': 0.5221248865127563, 'recall': 0.521905779838562, 'f1': 0.5213735699653625}
-                -   Test set {'accuracy': 0.04022468999028206, 'mAP@5': 0.059081222862005234, 'precision': 0.03967942297458649, 'recall': 0.03967365249991417, 'f1': 0.03931482508778572}
+                -   Test set {'accuracy': 0.04022468999028206, 'mAP@5': 0.062028661370277405, 'precision': 0.04003467410802841, 'recall': 0.040028903633356094, 'f1': 0.0397903248667717}
             - wd 0, lr 3.5e-3 (1674182383.6598442): did not converge
-            - wd 2e-5, lr 3.5e-3: PENDING
+            - wd 2e-5, lr 3.5e-3: # TODO PENDING
                 -   Train set
                 -   Test set
-            - wd 0.012, lr 3.5e-3: PENDING
+            - wd 0.012, lr 3.5e-3: # TODO PENDING
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---

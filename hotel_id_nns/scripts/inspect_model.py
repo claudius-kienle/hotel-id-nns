@@ -53,7 +53,10 @@ def main(args):
 
     ds = DataLoader(ds, batch_size=args.batch_size)
 
-    class_net = class_net.to("cuda")
+    if torch.cuda.is_available():
+        class_net = class_net.to("cuda")
+
+    class_net = class_net.eval()
     
     # generate predictions on dataset
     gt = []
@@ -66,7 +69,8 @@ def main(args):
     for sample in ds:
         input_img, chain_id, hotel_id = sample
 
-        input_img = input_img.to("cuda")
+        if torch.cuda.is_available():
+            input_img = input_img.to("cuda")
 
         if class_type == ClassType.chain_id:
             label = chain_id
@@ -74,7 +78,6 @@ def main(args):
             label = hotel_id
 
         pred_label_probs = class_net(input_img).cpu()
-        print(torch.sort(pred_label_probs, descending=True))
         num_classes = pred_label_probs.shape[-1]
         pred_label = torch.argmax(pred_label_probs, dim=-1)
         gt.append(label)
@@ -109,6 +112,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("model_path", type=Path)
-    parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_train_chain.h5")
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_test_chain.h5")
+    parser.add_argument('--batch-size', type=int, default=1)
     main(parser.parse_args())
