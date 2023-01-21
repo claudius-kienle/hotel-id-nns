@@ -264,13 +264,6 @@ class ResNet(torch.nn.Module):
         x = self.fully_connected(x)
         return x
     
-    def eval(self):
-        self.conv1.eval()
-        self.conv2_x.eval()
-        self.conv3_x.eval()
-        self.conv4_x.eval()
-        self.conv5_x.eval()
-
 
 if __name__ == "__main__":
     net = ResNet(resnet101_cfg, 1000)

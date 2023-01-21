@@ -66,52 +66,54 @@ def main(args):
     cm = None
     idx = 0
     ds = tqdm(ds)
-    for sample in ds:
-        input_img, chain_id, hotel_id = sample
+    with torch.no_grad():
+        for sample in ds:
+            input_img, chain_id, hotel_id = sample
 
-        if torch.cuda.is_available():
-            input_img = input_img.to("cuda")
+            if torch.cuda.is_available():
+                input_img = input_img.to("cuda")
 
-        if class_type == ClassType.chain_id:
-            label = chain_id
-        elif class_type == ClassType.hotel_id:
-            label = hotel_id
+            if class_type == ClassType.chain_id:
+                label = chain_id
+            elif class_type == ClassType.hotel_id:
+                label = hotel_id
 
-        pred_label_probs = class_net(input_img).cpu()
-        num_classes = pred_label_probs.shape[-1]
-        pred_label = torch.argmax(pred_label_probs, dim=-1)
-        gt.append(label)
-        preds.append(pred_label)
-        metrics = compute_classification_metrics(pred_label_probs, label.squeeze())
+            pred_label_probs = class_net(input_img).cpu()
+            num_classes = pred_label_probs.shape[-1]
+            pred_label = torch.argmax(pred_label_probs, dim=-1)
+            gt.append(label)
+            preds.append(pred_label)
+            metrics = compute_classification_metrics(pred_label_probs, label.squeeze())
 
-        if 'cm' in metrics:
-            if cm is None:
-                cm = metrics['cm']
-            else:
-                cm = cm + metrics['cm']
-            metrics.pop('cm')
-        metricsb.append(metrics)
+            del metrics['cm']
+            if 'cm' in metrics:
+                if cm is None:
+                    cm = metrics['cm']
+                else:
+                    cm = cm + metrics['cm']
+                metrics.pop('cm')
+            metricsb.append(metrics)
 
-        prints = {key: value.item() for key, value in metrics.items()}
-        ds.set_postfix(prints)
-        idx += 1
-        # if idx == 40:
-        #     break
+            prints = {key: value.item() for key, value in metrics.items()}
+            ds.set_postfix(prints)
+            idx += 1
+            # if idx == 40:
+            #     break
 
-    gt = torch.concat(gt).squeeze()
-    preds = torch.concat(preds)
+        gt = torch.concat(gt).squeeze()
+        preds = torch.concat(preds)
 
-    metrics = {key: [metrics[key] for metrics in metricsb] for key in metricsb[0].keys()}
-    metrics = {key: torch.mean(torch.vstack(metrics)).item() for key, metrics in metrics.items()}
-    print(metrics)
+        metrics = {key: [metrics[key] for metrics in metricsb] for key in metricsb[0].keys()}
+        metrics = {key: torch.mean(torch.vstack(metrics)).item() for key, metrics in metrics.items()}
+        print(metrics)
 
-    ax = plt.subplot()
-    plot_confusion_matrix(cm, ax)
-    plt.show()
+        ax = plt.subplot()
+        # plot_confusion_matrix(cm, ax)
+        plt.show()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("model_path", type=Path)
     parser.add_argument("-d", "--dataset-path",type=Path, default="data/dataset/hotel_test_chain.h5")
-    parser.add_argument('--batch-size', type=int, default=1)
+    parser.add_argument('--batch-size', type=int, default=128)
     main(parser.parse_args())
