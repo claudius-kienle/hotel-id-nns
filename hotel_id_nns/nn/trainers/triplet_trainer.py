@@ -35,10 +35,11 @@ class TripletTrainer(Trainer):
 
     def __init__(
         self,
+        project_name: str,
         trainer_id: Optional[str] = None,
         device: Optional[torch.device] = None,
     ):
-        super().__init__(project_name='hotel-id-triplet', trainer_id=trainer_id, device=device)
+        super().__init__(project_name=project_name, trainer_id=trainer_id, device=device)
 
     def infer(
             self,

@@ -27,15 +27,15 @@ def train(config: Dict, data_path: Path):
     print(config)
     ds_config = config['dataset']
     train_annotations = Path(data_path / ds_config['training'])
-    train_ds = H5TripletHotelDataset(class_name="hotel_id",annotations_file_path=train_annotations, config=config['dataset'])
+    train_ds = H5TripletHotelDataset(class_name="chain_id",annotations_file_path=train_annotations, config=config['dataset'])
     val_annotations = Path(data_path / ds_config['validation'])
-    val_ds = H5TripletHotelDataset(class_name="hotel_id",annotations_file_path=val_annotations, config=config['dataset'])
+    val_ds = H5TripletHotelDataset(class_name="chain_id", annotations_file_path=val_annotations, config=config['dataset'])
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 
     trainer_config = TripletTrainer.Config.from_config(config['trainer'])
 
-    trainer = TripletTrainer(project_name='hotel-id-triplet')
+    trainer = TripletTrainer(project_name="chain-id-trainer")
     
     class_net = get_model(config=config, latent_size=128)
 

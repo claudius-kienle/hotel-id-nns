@@ -97,8 +97,8 @@ def main(args):
             prints = {key: value.item() for key, value in metrics.items()}
             ds.set_postfix(prints)
             idx += 1
-            # if idx == 40:
-            #     break
+            if idx == 100:
+                break
 
         gt = torch.concat(gt).squeeze()
         preds = torch.concat(preds)

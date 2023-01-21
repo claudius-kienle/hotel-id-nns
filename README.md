@@ -108,26 +108,33 @@ Chain ID Prediction Roadmap
         - Test:  {'accuracy': 0.37638580799102783, 'mAP@5': 0.4941853880882263, 'precision': 0.45165151357650757, 'recall': 0.4202423095703125, 'f1': 0.4122817814350128}
         - Train: {'accuracy': 0.5951172113418579, 'mAP@5': 0.6947623491287231, 'precision': 0.7294825315475464, 'recall': 0.7660961151123047, 'f1': 0.7145957946777344}
 
+- Triplet Net
+  - # TODO
+
 
 Hotel ID Prediction Roadmap
 ------------------------
 
 1. Classical ResNet classification
-    2. Without Regularization (weight_decay=0)
+    1. Without Regularization (weight_decay=0)
         - ResNet 50 (1673631392.28741)
-            - TestSet: {'accuracy': 0.037278272211551666, 'mAP@5': 0.05137887969613075, 'precision': 0.03697093576192856, 'recall': 0.03735203295946121, 'f1': 0.03709796816110611}
             - TrainSet: {'accuracy': 0.948437511920929, 'mAP@5': 0.949999988079071, 'precision': 0.947555422782898, 'recall': 0.9483367204666138, 'f1': 0.9478158950805664}
+            - TestSet: {'accuracy': 0.037278272211551666, 'mAP@5': 0.05137887969613075, 'precision': 0.03697093576192856, 'recall': 0.03735203295946121, 'f1': 0.03709796816110611}
             - Easily overfits
             - Sweep on weight decay and two models with wd 0.1 and 0.01
-    1. sweep: did not train at all
-    2. two models with 0.1, 0.01 also did not converge: assume wd still to high
+    2. sweep: did not train at all
+    3. two models with 0.1, 0.01 also did not converge: assume wd still to high
         - new model with wd 2e-5 (torchvision default): did not converge, lr 0.1 just to high
-    3. Use Adam + higher lr (not that sensitive to lr, converges faster?): converges faster but lr 0.1 to high
-    4.  use Dropout Rate (0.1): nothing changed, equivalent to wd
-    5.  Final Net Hotel ID 
-        - wd 2e-5, lr 3.5e-3 (1674222514.1669555): # TODO
+    4. Use Adam + higher lr (not that sensitive to lr, converges faster?): converges faster but lr 0.1 to high
+    5.  use Dropout Rate (0.1): nothing changed, equivalent to wd
+    6.  Final Net Hotel ID 
+        - wd 2e-5, lr 3.5e-3 (1674222514.1669555): 
+          - Train set {'accuracy': 0.7364062666893005, 'mAP@5': 0.7716445326805115, 'precision': 0.74395751953125, 'recall': 0.7426989078521729, 'f1': 0.7425405979156494}
+          - Test Set {'accuracy': 0.07147469371557236, 'mAP@5': 0.09485301375389099, 'precision': 0.07216004282236099, 'recall': 0.07179640978574753, 'f1': 0.07179736346006393}
+        - wd 2e-5, lr 3.5e-3, patience 40 (1674233030.796025): 
+          - Train set {'accuracy': 0.6115624904632568, 'mAP@5': 0.6524296402931213, 'precision': 0.6180585026741028, 'recall': 0.6180443167686462, 'f1': 0.6172311902046204}
+          - Test set {'accuracy': 0.04306560009717941, 'mAP@5': 0.0652085542678833, 'precision': 0.042522773146629333, 'recall': 0.043607912957668304, 'f1': 0.04288448393344879}
         - wd 0.012, lr 3.5e-3 (1674181228.755098): did not converge
-        - wd 0.012, lr 3.5e-3, patience 40: # TODO PENDING
 
 2.  Triplet Learning
     1.  First model had no unit circle map, no clamp, MSE Loss
@@ -135,33 +142,36 @@ Hotel ID Prediction Roadmap
     2.  Two new models with MAP and cosine similarity, 'correct' loss and map to unit circle (normalization)
         - MSE loss net (1673797952.4643068) produces good looking results (~0.8 distance on unit circle)
             - Computing the mean for each hotel-id class results in metrics with cosine similarity for label probs: 
-                - Train set {'accuracy': 0.09921874850988388, 'mAP@5': 0.1398177295923233, 'precision': 0.09918095171451569, 'recall': 0.09957157075405121, 'f1': 0.09931115806102753}
-                - Test set {'accuracy': 0.026348039507865906, 'mAP@5': 0.0437028706073761, 'precision': 0.026427101343870163, 'recall': 0.026427101343870163, 'f1': 0.026427101343870163}
+              - Train set {'accuracy': 0.09921874850988388, 'mAP@5': 0.1398177295923233, 'precision': 0.09918095171451569, 'recall': 0.09957157075405121, 'f1': 0.09931115806102753}
+              - Test set {'accuracy': 0.026348039507865906, 'mAP@5': 0.0437028706073761, 'precision': 0.026427101343870163, 'recall': 0.026427101343870163, 'f1': 0.026427101343870163}
         - Cosine Similarity Loss (1673959543.7748818) also converges
             - Mean for each class:
-                - Train set {'accuracy': 0.10000000149011612, 'mAP@5': 0.14813801646232605, 'precision': 0.10040322691202164, 'recall': 0.10040322691202164, 'f1': 0.10040322691202164}
-                - Test set {'accuracy': 0.025876697152853012, 'mAP@5': 0.04259442910552025, 'precision': 0.02595576085150242, 'recall': 0.02595576085150242, 'f1': 0.02595576085150242}
+              - Train set {'accuracy': 0.10000000149011612, 'mAP@5': 0.14813801646232605, 'precision': 0.10040322691202164, 'recall': 0.10040322691202164, 'f1': 0.10040322691202164}
+              - Test set {'accuracy': 0.025876697152853012, 'mAP@5': 0.04259442910552025, 'precision': 0.02595576085150242, 'recall': 0.02595576085150242, 'f1': 0.02595576085150242}
     3. Add simple classification net on triplet-net backbone
         - MSE loss backbone
             - wd 2e-5, lr 0.1 (1674181285.901832)
-                -   Train set {'accuracy': 0.4006877839565277, 'mAP@5': 0.477467805147171, 'precision': 0.40475237369537354, 'recall': 0.405136376619339, 'f1': 0.4043208658695221}
-                -   Test set {'accuracy': 0.03125, 'mAP@5': 0.05229640007019043, 'precision': 0.03135787695646286, 'recall': 0.03099135123193264, 'f1': 0.030993277207016945}
-                - -> large gap, assuming overfit, increase wd (0.012)
+              - Train set {'accuracy': 0.4006877839565277, 'mAP@5': 0.477467805147171, 'precision': 0.40475237369537354, 'recall': 0.405136376619339, 'f1': 0.4043208658695221}
+              - Test set {'accuracy': 0.03125, 'mAP@5': 0.05229640007019043, 'precision': 0.03135787695646286, 'recall': 0.03099135123193264, 'f1': 0.030993277207016945}
+              - -> large gap, assuming overfit, increase wd (0.012)
             - wd 0, lr 0.1 (1674181228.755045): did not converge
-            - wd 2e-5, lr 3.5e-3: # TODO PENDING
-                -   Train set
-                -   Test set
-            - wd 2e-5, lr 3.5e-3, no finetune: # TODO PENDING
-            - wd 0.012, lr 3.5e-3: # TODO PENDING
+            - wd 2e-5, lr 3.5e-3 (1674228390.8946748): 
+              - Train set {'accuracy': 0.775390625, 'mAP@5': 0.8120834231376648, 'precision': 0.782054603099823, 'recall': 0.7816636562347412, 'f1': 0.7810818552970886}
+              - Test set {'accuracy': 0.041903410106897354, 'mAP@5': 0.06779119372367859, 'precision': 0.042263854295015335, 'recall': 0.041897378861904144, 'f1': 0.041900232434272766}
+            - wd 2e-5, lr 3.5e-3, no finetune (1674229453.8456535):
+              - Train set {'accuracy': 0.9417968988418579, 'mAP@5': 0.958759069442749, 'precision': 0.9445099830627441, 'recall': 0.9441522359848022, 'f1': 0.9437576532363892}
+              - Test set {'accuracy': 0.034090910106897354, 'mAP@5': 0.054616477340459824, 'precision': 0.03422962874174118, 'recall': 0.03459326550364494, 'f1': 0.034350838512182236}
+            - wd 0.012, lr 3.5e-3 (1674229525.3247921): did not converge
         - Cosine similarity loss backbone
             - wd 2e-5, lr 0.1 (1674181628.1866858)
                 -   Train set {'accuracy': 0.5168589949607849, 'mAP@5': 0.5907645225524902, 'precision': 0.5221248865127563, 'recall': 0.521905779838562, 'f1': 0.5213735699653625}
                 -   Test set {'accuracy': 0.04022468999028206, 'mAP@5': 0.062028661370277405, 'precision': 0.04003467410802841, 'recall': 0.040028903633356094, 'f1': 0.0397903248667717}
             - wd 0, lr 3.5e-3 (1674182383.6598442): did not converge
-            - wd 2e-5, lr 3.5e-3: # TODO PENDING
-                -   Train set
-                -   Test set
-            - wd 0.012, lr 3.5e-3: # TODO PENDING
+            - wd 2e-5, lr 3.5e-3 (1674228553.6910925):
+                -   Train set {'accuracy': 0.9232812523841858, 'mAP@5': 0.9413606524467468, 'precision': 0.9284943342208862, 'recall': 0.9268926978111267, 'f1': 0.927031934261322}
+                -   **Test set {'accuracy': 0.07192665338516235, 'mAP@5': 0.09925857186317444, 'precision': 0.07209797948598862, 'recall': 0.07173150032758713, 'f1': 0.07173436135053635}**
+            - wd 0.012, lr 3.5e-3 (1674229865.491079): did not converge
+            - wd 1e-4, lr 3.5e-3: # TODO
 
 Run Sweep [https://docs.wandb.ai/guides/sweeps](https://docs.wandb.ai/guides/sweeps)
 ---

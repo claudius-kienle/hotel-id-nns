@@ -8,11 +8,11 @@ from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 
 
 class H5TripletHotelDataset(H5HotelDataset):
-    def __init__(self, annotations_file_path: Path, config: dict):
+    def __init__(self, class_name: str, annotations_file_path: Path, config: dict):
         super().__init__(annotations_file_path, config)
 
         # self.class_name = config["triplet_class_name"]
-        self.class_name = "hotel_id"
+        self.class_name = class_name
 
         # Create class_to_indexes dictionary for the selected class_name
         if self.class_name == "chain_id":

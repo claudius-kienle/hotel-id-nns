@@ -16,7 +16,7 @@
     },
     "classification_type": "hotel-id", 
     "model_weights_imagenet": false, 
-    "model_finetune": true,
+    "model_finetune": false,
     "model_name": "TripletNet",
     "model_output": "data/checkpoints",
     "dataset": {

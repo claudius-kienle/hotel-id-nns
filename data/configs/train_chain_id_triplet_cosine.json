@@ -1,23 +1,22 @@
 {
     "trainer": {
         "epochs": 400, 
-        "batch_size": 128, 
+        "batch_size": 64, 
         "learning_rate": 0.0035,
         "lr_patience": 40,
         "lr_cooldown": 30,
+        "loss_type": "Cosine",
         "save_checkpoint": true,
         "amp": false,
         "activate_wandb": true,
         "optimizer_name": "adam",
-        "load_from_model": "data/checkpoints/hotel-id-triplet/1673797952.4643068/e55.pth",
+        "load_from_model": "none",
         "dataloader_num_workers": 10,
-        "loss_type": "CrossEntropy",
-        "weight_decay": 2e-5 
+        "weight_decay": 0.00,
+        "weight_decay-old": 0.02
     },
-    "classification_type": "hotel-id", 
-    "model_weights_imagenet": false, 
-    "model_finetune": true,
-    "model_name": "TripletNet",
+    "model_weights_imagenet": true,
+    "model_finetune": false,
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
