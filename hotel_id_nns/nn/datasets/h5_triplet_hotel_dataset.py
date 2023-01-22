@@ -38,19 +38,21 @@ class H5TripletHotelDataset(H5HotelDataset):
 
         # Calculate positive dataset index
         p_ds_indices = (class_labels == a_label).nonzero()
-        p_ds_index = p_ds_indices[torch.randint(high=len(p_ds_indices), size=(1,))]
+        p_ds_index = a_ds_index
+        while p_ds_index == a_ds_index and len(p_ds_indices) > 1:
+            p_ds_index = p_ds_indices[torch.randint(high=len(p_ds_indices), size=(1,))]
         p_img, p_chain_id, p_hotel_id = super().__getitem__(p_ds_index)
 
         # Calculate negative dataset index
-        n_label = a_label
-        while n_label == a_label:
-            n_label = torch.randint(high=class_labels.max().item() + 1, size=(1,))
+        unique_classes = torch.unique(class_labels)
+        unique_classes = unique_classes[unique_classes != a_label]
+        n_label = unique_classes[torch.randint(high=len(unique_classes), size=(1,))]
         n_ds_indices = (class_labels == n_label).nonzero()
         n_ds_index = n_ds_indices[torch.randint(high=len(n_ds_indices), size=(1,))]
 
         # Always of a different class than a_img
         n_img, n_chain_id, n_hotel_id = super().__getitem__(n_ds_index)
-
+        # print(a_ds_index, p_ds_index, n_ds_index)
         return a_img, p_img, n_img, a_chain_id, p_chain_id, n_chain_id, a_hotel_id, p_hotel_id, n_hotel_id
 
 

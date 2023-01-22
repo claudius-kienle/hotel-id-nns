@@ -21,7 +21,7 @@
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
         "validation": "data/dataset/hotel_val_chain.h5",
-        "remove_unkown_chain_id_samples": false,
+        "remove_unkown_chain_id_samples": true,
         "input_size": 512
     }
 }
