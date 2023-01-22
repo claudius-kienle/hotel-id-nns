@@ -43,7 +43,7 @@ class H5HotelDataset(Dataset):
 
         if config['remove_unkown_chain_id_samples']:
             # only iterate over samples who's chain_id is not zero. Therefore compute indices of such valid samples
-            self.valid_indices = torch.nonzero(self.chain_ids)
+            self.valid_indices = torch.nonzero(self.chain_ids).squeeze()
             # reduce chain_ids number by 1 since chain_id=0 removed
             self.chain_ids = self.chain_ids - 1
             self.chain_id_weights = self.chain_id_weights[1:]

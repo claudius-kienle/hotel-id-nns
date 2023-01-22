@@ -24,17 +24,6 @@ class H5TripletHotelDataset(H5HotelDataset):
 
         self.class_labels = self._select(self.chain_ids, self.hotel_ids)
 
-        label_to_indexes = dict()
-        for dataset_idx, idx in enumerate(self.valid_indices):
-            label = self.class_labels[idx].item()
-
-            if label not in label_to_indexes:
-                label_to_indexes[label] = []
-
-            label_to_indexes[label].append(dataset_idx)
-
-        self.label_to_indexes = label_to_indexes
-
     def _select(self, a, b):
         return [a, b][self._class_selector_idx]
 
@@ -42,27 +31,22 @@ class H5TripletHotelDataset(H5HotelDataset):
             -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
                      torch.Tensor, torch.Tensor, torch.Tensor,
                      torch.Tensor, torch.Tensor, torch.Tensor]:
+        class_labels = self.class_labels[self.valid_indices]
+
         a_img, a_chain_id, a_hotel_id = super().__getitem__(a_ds_index)
-        a_label = self.class_labels[self.valid_indices[a_ds_index]].item()
+        a_label = class_labels[a_ds_index].item()
 
         # Calculate positive dataset index
-        p_ds_indexes: list = copy.deepcopy(self.label_to_indexes[a_label])
-
-        if len(p_ds_indexes) == 1:
-            p_ds_index = a_ds_index
-        else:
-            p_ds_indexes.remove(a_ds_index)
-            p_ds_index = p_ds_indexes[torch.randint(high=len(p_ds_indexes), size=(1,)).item()]
-
-        # Might be the same as a_img, ... because there is just one
-        # sample for that class.
+        p_ds_indices = (class_labels == a_label).nonzero()
+        p_ds_index = p_ds_indices[torch.randint(high=len(p_ds_indices), size=(1,))]
         p_img, p_chain_id, p_hotel_id = super().__getitem__(p_ds_index)
 
         # Calculate negative dataset index
-        assert len(self.label_to_indexes) > 0  # more than one class
-        n_ds_index = a_ds_index
-        while self.class_labels[self.valid_indices[n_ds_index]].item() == a_label:
-            n_ds_index = torch.randint(high=len(self.valid_indices), size=(1,)).item()
+        n_label = a_label
+        while n_label == a_label:
+            n_label = torch.randint(high=class_labels.max().item() + 1, size=(1,))
+        n_ds_indices = (class_labels == n_label).nonzero()
+        n_ds_index = n_ds_indices[torch.randint(high=len(n_ds_indices), size=(1,))]
 
         # Always of a different class than a_img
         n_img, n_chain_id, n_hotel_id = super().__getitem__(n_ds_index)
