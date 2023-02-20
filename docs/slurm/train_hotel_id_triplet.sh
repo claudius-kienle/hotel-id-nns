@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=privat@claudiuskienle.de
-#SBATCH --partition=gpu_4,gpu_8,gpu_4_a100
+#SBATCH --partition=gpu_4_a100,gpu_4,gpu_8
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
 #SBATCH --time=24:00:00

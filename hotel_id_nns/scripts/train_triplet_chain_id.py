@@ -59,6 +59,8 @@ def main(args):
     if args.model is not None:
         print("overwriting model")
         config['model_name'] = args.model
+    if args.lr is not None:
+        config['trainer']['learning_rate'] = args.lr
 
     data_path = args.data_path if args.data_path is not None else repo_path
 
@@ -70,4 +72,5 @@ if __name__ == "__main__":
     parser.add_argument('config_path', type=Path, default='data/config/train_class_net.json')
     parser.add_argument('--data-path', type=Path, default=None)
     parser.add_argument('-m', '--model', type=str, default=None)
+    parser.add_argument('--lr', type=float, default=None)
     main(parser.parse_args())

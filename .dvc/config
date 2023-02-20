@@ -1,6 +1,0 @@
-[core]
-    remote = minio
-['remote "minio"']
-    url = s3://claudius.kienle/dvc/hotel-id-nns
-    endpointurl = https://api.minio.vincentcui.de
-    region = eu-central-virgo

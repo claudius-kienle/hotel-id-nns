@@ -17,6 +17,7 @@
     "classification_type": "hotel-id", 
     "model_weights_imagenet": false, 
     "model_finetune": false,
+    "model_name": "ResNet50",
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",

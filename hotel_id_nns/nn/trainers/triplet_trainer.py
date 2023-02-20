@@ -80,7 +80,7 @@ class TripletTrainer(Trainer):
         if config.loss_type == 'MSE':
             distance_function = torch.nn.PairwiseDistance(p=2)
         elif config.loss_type == 'Cosine':
-            distance_function = lambda a,b: -torch.nn.CosineSimilarity(dim=1)(a,b)
+            distance_function = lambda a,b: - torch.nn.CosineSimilarity(dim=1)(a,b)
         else:
             raise NotImplementedError()
 

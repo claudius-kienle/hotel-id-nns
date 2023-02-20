@@ -8,8 +8,6 @@ from torch import nn
 import torch
 from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 
-from hotel_id_nns.nn.datasets.hotel_dataset import HotelDataset
-
 from hotel_id_nns.nn.trainers.trainer import Trainer
 from hotel_id_nns.utils.plotting import plot_confusion_matrix
 from hotel_id_nns.utils.pytorch import compute_classification_metrics 
@@ -98,9 +96,9 @@ class ClassificationTrainer(Trainer):
         self,
         net: torch.nn.Module,
         config: Config,
-        train_ds: Union[HotelDataset, H5HotelDataset],
+        train_ds: H5HotelDataset,
         checkpoint_dir: Path,
-        val_ds: Union[HotelDataset, H5HotelDataset],
+        val_ds: H5HotelDataset,
     ):
         loss_type = config.loss_type
 

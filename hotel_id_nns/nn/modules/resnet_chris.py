@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 from hotel_id_nns.nn.modules.conv_layer import ConvLayer
 
-from hotel_id_nns.nn.modules.global_avg_pool_2d import GlobalAvgPool2d
-
 
 class ResNetBlock(nn.Module):
     def __init__(self, in_channels: int, kernel_channel_list: List[Tuple[int, int]],

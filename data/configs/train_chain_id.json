@@ -17,7 +17,7 @@
     "classification_type": "chain-id", 
     "model_weights_imagenet": true,
     "model_finetune": false,
-    "dropout_rate": 0.1,
+    "model_name": "ResNet50",
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",

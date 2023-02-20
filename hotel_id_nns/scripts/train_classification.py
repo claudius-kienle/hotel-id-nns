@@ -7,7 +7,7 @@ from typing import Dict
 from torch import nn
 import torchvision
 from torchsummary import summary
-from hotel_id_nns.nn.datasets.dataset_factory import DatasetFactory
+from hotel_id_nns.nn.datasets.h5_hotel_dataset import H5HotelDataset
 from hotel_id_nns.nn.modules.resnet_chris import ResNet, resnet18_cfg, resnet50_cfg
 from hotel_id_nns.nn.modules.tripet_classification_net import TripletClassificationNet
 from hotel_id_nns.nn.modules.triplet_net import TripletNet
@@ -89,9 +89,9 @@ def train_chain_id(config: Dict, data_path: Path):
     print(config)
     ds_config = config['dataset']
     train_annotations = Path(data_path / ds_config['training'])
-    train_ds = DatasetFactory().get(train_annotations, config=config['dataset'])
+    train_ds = H5HotelDataset(annotations_file_path=train_annotations, config=config['dataset'])
     val_annotations = Path(data_path / ds_config['validation'])
-    val_ds = DatasetFactory().get(val_annotations, config=config['dataset'])
+    val_ds = H5HotelDataset(annotations_file_path=val_annotations, config=config['dataset'])
 
     checkpoint_dir = Path(repo_path / config['model_output'])
 

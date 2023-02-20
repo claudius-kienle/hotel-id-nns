@@ -4,7 +4,7 @@
 #SBATCH --partition=gpu_4,gpu_8,gpu_4_a100
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --output="data/logs/triplet-%j.out"
 #SBATCH -J Triplet

@@ -31,7 +31,7 @@ def main():
 
     model = TripletNet(backbone=ResNet(resnet50_cfg, 128))
     # model.load_state_dict(torch.load(repo_path / "data/checkpoints/hotel-id-triplet/1673797952.4643068/e55.pth"))
-    model_path = repo_path / "data/checkpoints/hotel-id-triplet/1673959543.7748818/e63.pth"
+    model_path = repo_path / "data/checkpoints/hotel-id-triplet/1674587320.5721633/e157.pth"
     model.load_state_dict(torch.load(model_path))
     model = model.to(torch.device('cuda'))
 

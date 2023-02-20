@@ -1,6 +1,6 @@
 program: hotel_id_nns/scripts/train_sweep.py
 method: bayes
-project: ClassNet
+project: chain-id
 metric:
   goal: minimize
   name: validation loss

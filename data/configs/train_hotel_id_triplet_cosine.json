@@ -12,11 +12,11 @@
         "optimizer_name": "adam",
         "load_from_model": "none",
         "dataloader_num_workers": 10,
-        "weight_decay": 0.00,
-        "weight_decay-old": 0.02
+        "weight_decay": 0.00
     },
     "model_weights_imagenet": true,
     "model_finetune": false,
+    "model_name": "ResNet50",
     "model_output": "data/checkpoints",
     "dataset": {
         "training": "data/dataset/hotel_train_chain.h5",
